@@ -111,3 +111,22 @@ def update_order(oid):
 
     exec_sql("update public.orders set estado = %s where id = %s", (new_estado, oid))
     return jsonify({"ok": True, "estado": new_estado})
+
+import traceback
+from flask import jsonify
+
+@app.route("/api/health")
+def health():
+    try:
+        row = fetch_one("select 1 as ok")
+        exists = fetch_one("select to_regclass('public.orders') as reg")
+        return jsonify({
+            "ok": row and row["ok"] == 1,
+            "orders_table": bool(exists and exists["reg"]),
+        })
+    except Exception as e:
+        print("HEALTH ERROR:", e)
+        traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
