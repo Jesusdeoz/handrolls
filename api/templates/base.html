@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}{% endblock %} — HandRolls</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 1rem auto; max-width: 900px; }
+    header { display:flex; gap:1rem; align-items:center; margin-bottom:1rem; }
+    .row { display:grid; gap:1rem; grid-template-columns: 1fr 1fr; }
+    .card { border:1px solid #ddd; border-radius:12px; padding:12px; }
+    .btn { padding:8px 12px; border:1px solid #333; border-radius:8px; background:#f7f7f7; cursor:pointer;}
+    .btn+.btn{ margin-left:.5rem; }
+    .badge { padding:2px 8px; border-radius:999px; background:#eee; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>HandRolls</h1>
+  <nav><a href="/">Nuevo pedido</a> | <a href="/kitchen">Cocina</a></nav>
+</header>
+{% block content %}{% endblock %}
+</body>
+</html>

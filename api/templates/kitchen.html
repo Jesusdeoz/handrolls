@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Cocina{% endblock %}
+{% block content %}
+<h2>Cocina (solo lectura)</h2>
+<p>Esta pantalla se actualiza automáticamente. No hay botones de acción.</p>
+<div class="row">
+  <div class="card">
+    <h3>Nuevo <span class="badge" id="c_nuevo">0</span></h3>
+    <div id="col_nuevo"></div>
+  </div>
+  <div class="card">
+    <h3>En preparación <span class="badge" id="c_prep">0</span></h3>
+    <div id="col_prep"></div>
+  </div>
+  <div class="card">
+    <h3>Listo <span class="badge" id="c_listo">0</span></h3>
+    <div id="col_listo"></div>
+  </div>
+  <div class="card">
+    <h3>Despachado <span class="badge" id="c_desp">0</span></h3>
+    <div id="col_desp"></div>
+  </div>
+</div>
+
+<!-- usa url_for para servir el estático -->
+<script src="{{ url_for('static', filename='kitchen.js') }}"></script>
+{% endblock %}

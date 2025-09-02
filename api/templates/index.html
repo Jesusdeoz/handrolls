@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Nuevo pedido{% endblock %}
+{% block content %}
+<h2>Crear pedido</h2>
+<form method="post" action="/orders" class="card">
+  <label>Nombre cliente<br><input name="cliente_nombre" required></label><br><br>
+  <label>Detalle (ej: 2 salmón, 1 pollo)<br>
+    <textarea name="detalle" required></textarea>
+  </label><br><br>
+  <fieldset>
+    <legend>Salsas</legend>
+    <label><input type="checkbox" name="salsas" value="soya"> Soya</label>
+    <label><input type="checkbox" name="salsas" value="spicy_mayo"> Spicy mayo</label>
+    <label><input type="checkbox" name="salsas" value="teriyaki"> Teriyaki</label>
+  </fieldset><br>
+  <fieldset>
+    <legend>Modalidad</legend>
+    <label><input type="radio" name="modalidad" value="retiro" checked> Retiro</label>
+    <label><input type="radio" name="modalidad" value="despacho"> Despacho</label>
+  </fieldset><br>
+  <div id="direccionBox" style="display:none">
+    <label>Dirección<br><input name="direccion"></label><br><br>
+    <label>Comuna<br><input name="comuna" placeholder="ej: Maipú"></label><br><br>
+  </div>
+  <label>Método de pago<br>
+    <select name="medio_pago" required>
+      <option value="debito_credito">Débito/Crédito</option>
+      <option value="transferencia">Transferencia</option>
+      <option value="efectivo">Efectivo</option>
+    </select>
+  </label><br><br>
+  <label>Monto total (CLP)<br><input name="monto_total_clp" type="number" min="0"></label><br><br>
+  <label>Observaciones<br><input name="observaciones" placeholder="sin cebollín, etc."></label><br><br>
+  <button class="btn" type="submit">Crear pedido</button>
+</form>
+
+<hr>
+
+<h2>Gestión de estados (solo mostrador)</h2>
+<p>Desde aquí cambias el estado de los pedidos. La cocina solo visualiza.</p>
+
+<div class="row">
+  <div class="card">
+    <h3>Nuevo <span class="badge" id="c_nuevo">0</span></h3>
+    <div id="col_nuevo"></div>
+  </div>
+  <div class="card">
+    <h3>En preparación <span class="badge" id="c_prep">0</span></h3>
+    <div id="col_prep"></div>
+  </div>
+  <div class="card">
+    <h3>Listo <span class="badge" id="c_listo">0</span></h3>
+    <div id="col_listo"></div>
+  </div>
+  <div class="card">
+    <h3>Despachado <span class="badge" id="c_desp">0</span></h3>
+    <div id="col_desp"></div>
+  </div>
+</div>
+
+<script>
+  // Mostrar/ocultar dirección según modalidad
+  const radios = document.querySelectorAll('input[name="modalidad"]');
+  const box = document.getElementById('direccionBox');
+  function update() {
+    const v = [...radios].find(r=>r.checked)?.value;
+    box.style.display = (v === 'despacho') ? '' : 'none';
+  }
+  radios.forEach(r=>r.addEventListener('change', update));
+  update();
+
+  // Gestión de estados (con botones)
+  async function fetchEstado(estado) {
+    const res = await fetch(`/api/orders?estado=${estado}`);
+    return await res.json();
+  }
+
+  function cardGestion(p) {
+    const botones =
+      p.modalidad === 'despacho'
+        ? `
+          <button class="btn" onclick="act(${p.id}, 'next')">Siguiente</button>
+          <button class="btn" onclick="act(${p.id}, 'despachado')">Marcar Despachado</button>
+          <button class="btn" onclick="act(${p.id}, 'entregado')">Marcar Entregado</button>
+          <button class="btn" onclick="act(${p.id}, 'cancel')">Cancelar</button>
+        `
+        : `
+          <button class="btn" onclick="act(${p.id}, 'next')">Siguiente</button>
+          <button class="btn" onclick="act(${p.id}, 'retirado')">Marcar Retirado</button>
+          <button class="btn" onclick="act(${p.id}, 'cancel')">Cancelar</button>
+        `;
+    return `
+      <div class="card" style="margin:8px 0">
+        <strong>#${p.id}</strong> — ${p.cliente_nombre} <small>(${p.modalidad})</small><br>
+        <em>${p.detalle}</em><br>
+        Salsas: ${p.salsas || '-'}<br>
+        <small>Creado: ${p.hora_creacion}</small><br><br>
+        <div>${botones}</div>
+      </div>
+    `;
+  }
+
+  async function act(id, action) {
+    await fetch(`/api/orders/${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action})
+    });
+    render();
+  }
+
+  async function render() {
+    const nuevo = await fetchEstado('nuevo');
+    const prep  = await fetchEstado('en_preparacion');
+    const listo = await fetchEstado('listo');
+    const desp  = await fetchEstado('despachado');
+
+    document.getElementById('c_nuevo').textContent = nuevo.length;
+    document.getElementById('c_prep').textContent  = prep.length;
+    document.getElementById('c_listo').textContent = listo.length;
+    document.getElementById('c_desp').textContent  = desp.length;
+
+    document.getElementById('col_nuevo').innerHTML = nuevo.map(cardGestion).join('');
+    document.getElementById('col_prep').innerHTML  = prep.map(cardGestion).join('');
+    document.getElementById('col_listo').innerHTML = listo.map(cardGestion).join('');
+    document.getElementById('col_desp').innerHTML  = desp.map(cardGestion).join('');
+  }
+
+  render();
+  setInterval(render, 4000);
+</script>
+{% endblock %}
