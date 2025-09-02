@@ -1,27 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Cocina{% endblock %}
 {% block content %}
+<style>
+  /* marcos por estado */
+  .frame-green { border: 2px solid #16a34a !important; }
+  .frame-red   { border: 2px solid #dc2626 !important; }
+
+  /* también pintamos cada tarjeta de pedido */
+  .card-order { border-width: 2px !important; }
+  .order-current { border-color: #22c55e !important; }
+  .order-done    { border-color: #ef4444 !important; }
+</style>
+
 <h2>Cocina (solo lectura)</h2>
-<p>Esta pantalla se actualiza automáticamente. No hay botones de acción.</p>
+<p>Se actualiza automáticamente.</p>
+
 <div class="row">
-  <div class="card">
+  <!-- Pedidos actuales en VERDE -->
+  <div class="card frame-green">
     <h3>Nuevo <span class="badge" id="c_nuevo">0</span></h3>
     <div id="col_nuevo"></div>
   </div>
-  <div class="card">
+  <div class="card frame-green">
     <h3>En preparación <span class="badge" id="c_prep">0</span></h3>
     <div id="col_prep"></div>
   </div>
-  <div class="card">
+  <div class="card frame-green">
     <h3>Listo <span class="badge" id="c_listo">0</span></h3>
     <div id="col_listo"></div>
   </div>
-  <div class="card">
+
+  <!-- Despachados en ROJO -->
+  <div class="card frame-red">
     <h3>Despachado <span class="badge" id="c_desp">0</span></h3>
     <div id="col_desp"></div>
   </div>
 </div>
+
 <script src="{{ url_for('static', filename='kitchen.js') }}"></script>
 {% endblock %}
-
-
