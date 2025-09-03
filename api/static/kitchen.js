@@ -1,3 +1,5 @@
+const LATE_MINUTES = 60; // umbral para marcar en rojo
+
 async function fetchAll() {
   const r = await fetch(`/api/orders`, { cache: 'no-store' });
   return await r.json();
@@ -45,12 +47,23 @@ function isDelivered(p) {
   return ['despachado','entregado','retirado'].includes(st);
 }
 
+// ¿Ya pasó una hora desde la creación?
+function isLate(ts) {
+  const created = new Date(ts).getTime();
+  if (isNaN(created)) return false;
+  const mins = (Date.now() - created) / 60000;
+  return mins >= LATE_MINUTES;
+}
+
 function row(p) {
   const total = Number(p.monto_total_clp || 0)
     .toLocaleString('es-CL', { style:'currency', currency:'CLP' });
   const hora = hhmm(p.hora_creacion);
-  const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
+  const late = isLate(p.hora_creacion);
 
+  const horaHtml = `<span class="time-badge${late ? ' time-badge-late' : ''}">${hora}</span>`;
+
+  const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
   const det  = p.detalle ? `📝 ${esc(p.detalle)}` : '';
   const soyaTxt = formatSoya(p.salsas);
   const obs  = p.observaciones ? `Obs: ${esc(p.observaciones)}` : '';
@@ -60,7 +73,7 @@ function row(p) {
   return `
     <tr class="row-green">
       <td>#${p.id}</td>
-      <td>${hora}</td>
+      <td>${horaHtml}</td>
       <td>${esc(p.cliente_nombre)} ${tel} ${detailHtml}</td>
       <td><span class="badge badge-green">Pendiente</span></td>
       <td>${esc(pagoLabel(p.medio_pago))}</td>
