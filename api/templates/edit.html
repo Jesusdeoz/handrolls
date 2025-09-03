@@ -1,7 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Editar pedido #{{ o.id }}{% endblock %}
 {% block content %}
+
 <h2>Editar pedido #{{ o.id }}</h2>
+
+<style>
+  .sub { color:#6b7280; font-size:12px; }
+  .textarea-lg { width:100%; min-height:90px; }
+  .card form label { display:block; }
+</style>
+
 <form method="post" action="/orders/{{ o.id }}/update" class="card">
 
   <label>Nombre cliente<br>
@@ -13,20 +21,27 @@
   </label><br><br>
 
   <label>Detalle<br>
-    <textarea name="detalle" required>{{ o.detalle }}</textarea>
+    <textarea name="detalle" class="textarea-lg" rows="5" style="width:100%" required>{{ o.detalle }}</textarea>
   </label><br><br>
 
-  {% set s = (o.salsas or '').split(',') %}
   <fieldset>
-    <legend>Salsas</legend>
-    <label><input type="checkbox" name="salsas" value="soya" {% if 'soya' in s %}checked{% endif %}> Soya</label>
-    <label><input type="checkbox" name="salsas" value="spicy_mayo" {% if 'spicy_mayo' in s %}checked{% endif %}> Spicy mayo</label>
-    <label><input type="checkbox" name="salsas" value="teriyaki" {% if 'teriyaki' in s %}checked{% endif %}> Teriyaki</label>
+    <legend>Soya</legend>
+    <label>
+      <input type="number" name="soya_normal_qty" min="0" placeholder="0" style="width:70px"
+             value="{{ o.soya_normal_qty }}">
+      Soya normal
+    </label>
+    <label style="margin-left:16px">
+      <input type="number" name="soya_dulce_qty" min="0" placeholder="0" style="width:70px"
+             value="{{ o.soya_dulce_qty }}">
+      Soya dulce
+    </label>
+    <div class="sub">Deja en blanco o 0 si no corresponde.</div>
   </fieldset><br>
 
   <fieldset>
     <legend>Modalidad</legend>
-    <label><input type="radio" name="modalidad" value="retiro" {% if o.modalidad=='retiro' %}checked{% endif %}> Retiro</label>
+    <label><input type="radio" name="modalidad" value="retiro"  {% if o.modalidad=='retiro' %}checked{% endif %}> Retiro</label>
     <label><input type="radio" name="modalidad" value="despacho" {% if o.modalidad=='despacho' %}checked{% endif %}> Despacho</label>
   </fieldset><br>
 
@@ -38,8 +53,8 @@
   <label>Método de pago<br>
     <select name="medio_pago" required>
       <option value="debito_credito" {% if o.medio_pago=='debito_credito' %}selected{% endif %}>Débito/Crédito</option>
-      <option value="transferencia" {% if o.medio_pago=='transferencia' %}selected{% endif %}>Transferencia</option>
-      <option value="efectivo" {% if o.medio_pago=='efectivo' %}selected{% endif %}>Efectivo</option>
+      <option value="transferencia"  {% if o.medio_pago=='transferencia' %}selected{% endif %}>Transferencia</option>
+      <option value="efectivo"       {% if o.medio_pago=='efectivo' %}selected{% endif %}>Efectivo</option>
     </select>
   </label><br><br>
 
@@ -48,7 +63,7 @@
   </label><br><br>
 
   <label>Observaciones<br>
-    <input name="observaciones" value="{{ o.observaciones or '' }}">
+    <textarea name="observaciones" class="textarea-lg" rows="3" style="width:100%">{{ o.observaciones or '' }}</textarea>
   </label><br><br>
 
   <button class="btn" type="submit">Guardar cambios</button>
@@ -56,6 +71,7 @@
 </form>
 
 <script>
+  // mostrar/ocultar dirección según modalidad
   const radios = document.querySelectorAll('input[name="modalidad"]');
   const box = document.getElementById('direccionBox');
   function toggleDir() {
@@ -64,4 +80,5 @@
   }
   radios.forEach(r=>r.addEventListener('change', toggleDir));
 </script>
+
 {% endblock %}
