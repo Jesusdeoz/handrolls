@@ -19,6 +19,21 @@
   .row-green { border-left:4px solid #22c55e; }
 
   .muted { color:#6b7280; padding:12px; }
+
+  /* Etiqueta visual para la hora */
+  .time-badge{
+    display:inline-block;
+    padding:4px 8px;
+    border-radius:8px;
+    border:1px solid #e5e7eb;
+  }
+  .time-badge-late{
+    background:#fee2e2;   /* rojo claro */
+    color:#991b1b;        /* texto rojo oscuro */
+    border-color:#fca5a5; /* borde rojizo */
+    font-weight:600;
+  }
+
 </style>
 
 <div class="card">
@@ -40,4 +55,5 @@
 
 <script src="{{ url_for('static', filename='kitchen.js') }}"></script>
 {% endblock %}
+
 
