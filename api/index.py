@@ -48,6 +48,7 @@ def close_db(_exc):
     if db is not None:
         db.close()
 
+# -------------------- SOYA HELPERS --------------------
 def _to_int(x):
     try:
         v = int(x)
@@ -72,7 +73,6 @@ def parse_soya_string(s):
                 elif k.strip() == "dulce":
                     d = _to_int(v)
     return n, d
-
 
 # -------------------- DEBUG / DIAG --------------------
 @app.errorhandler(Exception)
@@ -111,6 +111,9 @@ def _diag():
         cnt = fetch_one("select count(*) as n from public.orders")
         info["orders_count"] = cnt["n"]
     info["edit_template_found"] = "edit.html" in info["templates_list"]
+    # promos
+    preg = fetch_one("select to_regclass('public.promos') as reg")
+    info["promos_table_exists"] = bool(preg and preg["reg"])
     return jsonify(info)
 
 # -------------------- RUTAS HTML --------------------
@@ -128,6 +131,8 @@ def create_order():
     cliente = request.form["cliente_nombre"].strip()
     telefono = request.form.get("telefono")
     detalle = request.form["detalle"].strip()
+
+    # soya cantidades -> string "normal:x;dulce:y" o None
     soya_normal_qty = request.form.get("soya_normal_qty")
     soya_dulce_qty  = request.form.get("soya_dulce_qty")
     salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
@@ -147,17 +152,15 @@ def create_order():
 
     return redirect("/kitchen")
 
-# -------------------- API: LISTAR / ACTUALIZAR ESTADO --------------------
+# -------------------- API: LISTAR / ACTUALIZAR ESTADO (ORDERS) --------------------
 @app.route("/api/orders")
 def list_orders():
-    # trae todos ordenados por hora de creación
     rows = fetch_all("select * from public.orders order by hora_creacion asc")
     return jsonify(rows)
 
 NEXT = {
     "nuevo": "en_preparacion",
     "en_preparacion": "listo",
-    # lo demás se marca explícito (despachado/entregado/retirado/cancelado)
 }
 
 @app.route("/api/orders/<int:oid>", methods=["PATCH"])
@@ -194,13 +197,13 @@ def edit_order(oid):
     o2["soya_dulce_qty"]  = d
     return render_template("edit.html", o=o2)
 
-
 # nombre y endpoint únicos para no chocar con update_order()
 @app.route("/orders/<int:oid>/update", methods=["POST"], endpoint="orders_update_form")
 def update_order_form(oid):
     cliente = request.form["cliente_nombre"].strip()
     telefono = request.form.get("telefono")
     detalle = request.form["detalle"].strip()
+
     soya_normal_qty = request.form.get("soya_normal_qty")
     soya_dulce_qty  = request.form.get("soya_dulce_qty")
     salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
@@ -223,3 +226,24 @@ def update_order_form(oid):
 
     return redirect("/")
 
+# -------------------- PROMOS: API + FORM --------------------
+@app.route("/api/promos")
+def api_promos():
+    rows = fetch_all("select promo_nro, detalle, monto from public.promos order by promo_nro asc")
+    return jsonify(rows)
+
+@app.route("/promos", methods=["POST"])
+def create_or_update_promo():
+    promo_nro = request.form["promo_nro"].strip()
+    p_detalle = request.form["promo_detalle"].strip()
+    p_monto   = int(request.form.get("promo_monto") or 0)
+
+    # Requiere primary key (o unique) en promo_nro -> ver SQL arriba
+    exec_sql("""
+        insert into public.promos (promo_nro, detalle, monto)
+        values (%s,%s,%s)
+        on conflict (promo_nro) do update
+           set detalle = excluded.detalle,
+               monto   = excluded.monto
+    """, (promo_nro, p_detalle, p_monto))
+    return redirect("/")
