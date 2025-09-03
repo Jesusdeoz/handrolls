@@ -7,7 +7,7 @@ def edit_order(oid):
         abort(404)
     return render_template("edit.html", o=o)
 
-# 👇 Renombramos la función y le damos un endpoint único
+# ✅ nombre y endpoint únicos
 @app.route("/orders/<int:oid>/update", methods=["POST"], endpoint="orders_update_form")
 def update_order_form(oid):
     cliente = request.form["cliente_nombre"].strip()
@@ -31,6 +31,7 @@ def update_order_form(oid):
           direccion, comuna, monto, observaciones, oid))
 
     return redirect("/")
+
 
 # --- DEBUG & GUARD RUNTIME (pegar cerca de arriba de index.py) ---
 import os, sys, json, traceback
@@ -97,6 +98,7 @@ def _diag():
         tb = traceback.format_exc()
         print("DIAG ERROR:", tb)
         return jsonify({"ok": False, "error": str(e), "trace": tb}), 500
+
 
 
 
