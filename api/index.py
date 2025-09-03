@@ -7,8 +7,9 @@ def edit_order(oid):
         abort(404)
     return render_template("edit.html", o=o)
 
-@app.route("/orders/<int:oid>/update", methods=["POST"])
-def update_order(oid):
+# 👇 Renombramos la función y le damos un endpoint único
+@app.route("/orders/<int:oid>/update", methods=["POST"], endpoint="orders_update_form")
+def update_order_form(oid):
     cliente = request.form["cliente_nombre"].strip()
     telefono = request.form.get("telefono")
     detalle = request.form["detalle"].strip()
@@ -96,5 +97,6 @@ def _diag():
         tb = traceback.format_exc()
         print("DIAG ERROR:", tb)
         return jsonify({"ok": False, "error": str(e), "trace": tb}), 500
+
 
 
