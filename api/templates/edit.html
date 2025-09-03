@@ -8,6 +8,34 @@
   .sub { color:#6b7280; font-size:12px; }
   .textarea-lg { width:100%; min-height:90px; }
   .card form label { display:block; }
+
+  /* ===== Alineado Soya ===== */
+  .soya-wrap{
+    display:flex;
+    flex-wrap:wrap;      /* si no cabe, salta a la siguiente línea */
+    gap:16px 24px;
+    margin-bottom:6px;
+  }
+  .soya-row{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    margin:0;
+  }
+  .soya-row span{ line-height:1.2; }
+  .soya-row input[type="number"]{
+    width:80px;
+    text-align:center;
+    padding:8px 10px;
+    border:1px solid var(--b, #e5e7eb);
+    border-radius:10px;
+  }
+  .soya-row input[type="number"]::-webkit-outer-spin-button,
+  .soya-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .soya-row input[type="number"] { -moz-appearance:textfield; }
+  @media (max-width:480px){
+    .soya-row input[type="number"]{ width:68px; }
+  }
 </style>
 
 <form method="post" action="/orders/{{ o.id }}/update" class="card">
@@ -17,7 +45,8 @@
   </label><br><br>
 
   <label>Teléfono<br>
-    <input name="telefono" value="{{ o.telefono or '' }}" placeholder="+56912345678">
+    <input name="telefono" type="tel" inputmode="numeric" autocomplete="tel"
+           placeholder="+56912345678" pattern="[0-9+ ]*" value="{{ o.telefono or '' }}">
   </label><br><br>
 
   <label>Detalle<br>
@@ -26,23 +55,34 @@
 
   <fieldset>
     <legend>Soya</legend>
-    <label>
-      <input type="number" name="soya_normal_qty" min="0" placeholder="0" style="width:70px"
-             value="{{ o.soya_normal_qty }}">
-      Soya normal
-    </label>
-    <label style="margin-left:16px">
-      <input type="number" name="soya_dulce_qty" min="0" placeholder="0" style="width:70px"
-             value="{{ o.soya_dulce_qty }}">
-      Soya dulce
-    </label>
+
+    <div class="soya-wrap">
+      <label class="soya-row">
+        <input type="number" name="soya_normal_qty" min="0" step="1" inputmode="numeric"
+               placeholder="0" value="{{ o.soya_normal_qty }}">
+        <span>Soya normal</span>
+      </label>
+
+      <label class="soya-row">
+        <input type="number" name="soya_dulce_qty" min="0" step="1" inputmode="numeric"
+               placeholder="0" value="{{ o.soya_dulce_qty }}">
+        <span>Soya dulce</span>
+      </label>
+    </div>
+
     <div class="sub">Deja en blanco o 0 si no corresponde.</div>
   </fieldset><br>
 
   <fieldset>
     <legend>Modalidad</legend>
-    <label><input type="radio" name="modalidad" value="retiro"  {% if o.modalidad=='retiro' %}checked{% endif %}> Retiro</label>
-    <label><input type="radio" name="modalidad" value="despacho" {% if o.modalidad=='despacho' %}checked{% endif %}> Despacho</label>
+    <label>
+      <input type="radio" name="modalidad" value="retiro"  {% if o.modalidad=='retiro' %}checked{% endif %}>
+      Retiro
+    </label>
+    <label>
+      <input type="radio" name="modalidad" value="despacho" {% if o.modalidad=='despacho' %}checked{% endif %}>
+      Despacho
+    </label>
   </fieldset><br>
 
   <div id="direccionBox" style="display: {{ 'block' if o.modalidad=='despacho' else 'none' }}">
@@ -59,7 +99,7 @@
   </label><br><br>
 
   <label>Monto total (CLP)<br>
-    <input name="monto_total_clp" type="number" min="0" value="{{ o.monto_total_clp or 0 }}">
+    <input name="monto_total_clp" type="number" min="0" step="1" value="{{ o.monto_total_clp or 0 }}">
   </label><br><br>
 
   <label>Observaciones<br>
@@ -71,7 +111,7 @@
 </form>
 
 <script>
-  // mostrar/ocultar dirección según modalidad
+  // Mostrar/ocultar dirección según modalidad
   const radios = document.querySelectorAll('input[name="modalidad"]');
   const box = document.getElementById('direccionBox');
   function toggleDir() {
