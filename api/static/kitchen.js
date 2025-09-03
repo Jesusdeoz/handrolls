@@ -25,23 +25,36 @@ function pagoLabel(v) {
   }
 }
 
-// Entregado = cualquiera de estos estados; Kitchen los OCULTA
+// Formatea la cadena "normal:2;dulce:1" a "Soya normal x2, Soya dulce x1"
+function formatSoya(s) {
+  if (!s) return "";
+  const map = {};
+  s.split(";").forEach(pair => {
+    const [k, v] = pair.split(":");
+    if (k && v) map[k.trim()] = parseInt(v, 10) || 0;
+  });
+  const parts = [];
+  if (map.normal) parts.push(`Soya normal x${map.normal}`);
+  if (map.dulce)  parts.push(`Soya dulce x${map.dulce}`);
+  return parts.join(", ");
+}
+
+// Kitchen solo muestra pendientes (NO entregados/retirados/despachados)
 function isDelivered(p) {
   const st = (p.estado || '').toLowerCase();
   return ['despachado','entregado','retirado'].includes(st);
 }
 
 function row(p) {
-  const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
+  const total = Number(p.monto_total_clp || 0)
+    .toLocaleString('es-CL', { style:'currency', currency:'CLP' });
   const hora = hhmm(p.hora_creacion);
+  const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
-  const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
-
-  // 📝 Detalle + salsas + observaciones (cada uno si existe)
-  const det = p.detalle ? `📝 ${esc(p.detalle)}` : '';
-  const sals = p.salsas ? `Salsas: ${esc(p.salsas)}` : '';
+  const det  = p.detalle ? `📝 ${esc(p.detalle)}` : '';
+  const soyaTxt = formatSoya(p.salsas);
   const obs  = p.observaciones ? `Obs: ${esc(p.observaciones)}` : '';
-  const detailBlock = [det, sals, obs].filter(Boolean).join(' — ');
+  const detailBlock = [det, soyaTxt, obs].filter(Boolean).join(' — ');
   const detailHtml = detailBlock ? `<div class="sub">${detailBlock}</div>` : '';
 
   return `
@@ -56,17 +69,16 @@ function row(p) {
   `;
 }
 
-
 async function render() {
   try {
     const all = await fetchAll();
-    const pending = all.filter(p => !isDelivered(p)); // <-- SOLO PENDIENTES
+    const pending = all.filter(p => !isDelivered(p)); // SOLO PENDIENTES
 
     const tbody = document.getElementById('orders_tbody');
-    const empty = document.getElementById('empty');
+    const empty = document.getElementById('empty'); // si lo usas en kitchen.html
 
     tbody.innerHTML = pending.map(row).join('');
-    empty.style.display = pending.length ? 'none' : 'block';
+    if (empty) empty.style.display = pending.length ? 'none' : 'block';
   } catch (e) {
     console.error('Kitchen render error', e);
   }
@@ -74,4 +86,3 @@ async function render() {
 
 render();
 setInterval(render, 4000);
-
