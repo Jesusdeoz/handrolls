@@ -27,8 +27,6 @@ function pagoLabel(v) {
 }
 
 function row(p) {
-  // Pendiente = nuevo/en_preparacion/listo
-  // Entregado = despachado/entregado/retirado
   const st = (p.estado || '').toLowerCase();
   const isDelivered = ['despachado', 'entregado', 'retirado'].includes(st);
   const estadoLabel = isDelivered ? 'Entregado' : 'Pendiente';
@@ -39,18 +37,20 @@ function row(p) {
   const hora = hhmm(p.hora_creacion);
 
   const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
+  const det = p.detalle ? `<div class="sub">📝 ${esc(p.detalle)}${p.salsas ? ' — Salsas: ' + esc(p.salsas) : ''}</div>` : '';
 
   return `
     <tr class="${rowCls}">
       <td>#${p.id}</td>
       <td>${hora}</td>
-      <td>${esc(p.cliente_nombre)} ${tel}</td>
+      <td>${esc(p.cliente_nombre)} ${tel} ${det}</td>
       <td><span class="badge ${badge}">${estadoLabel}</span></td>
       <td>${esc(pagoLabel(p.medio_pago))}</td>
       <td class="right">${total}</td>
     </tr>
   `;
 }
+
 
 async function render() {
   try {
@@ -64,3 +64,4 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
