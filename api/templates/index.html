@@ -68,9 +68,22 @@
 
   .btn-sm { padding:6px 8px; font-size:12px; }
   .actions .btn-sm{ margin-right:6px; margin-bottom:6px; display:inline-block; }
+
+  .toolbar { display:flex; align-items:center; gap:8px; margin: 8px 0 12px; }
+  .toolbar select { padding:6px 8px; }
 </style>
 
 <div class="card">
+  <div class="toolbar">
+    <label>Mostrar:
+      <select id="stateFilter">
+        <option value="all">Todos</option>
+        <option value="pending" selected>Pendientes</option>
+        <option value="delivered">Entregados</option>
+      </select>
+    </label>
+  </div>
+
   <table class="table">
     <thead>
       <tr>
@@ -88,7 +101,7 @@
 </div>
 
 <script>
-  // Mostrar/ocultar dirección según modalidad
+  // Mostrar/ocultar dirección según modalidad en el formulario de "Crear pedido"
   const radios = document.querySelectorAll('input[name="modalidad"]');
   const box = document.getElementById('direccionBox');
   function toggleDir() {
@@ -98,9 +111,17 @@
   radios.forEach(r=>r.addEventListener('change', toggleDir));
   toggleDir();
 
-  // --------- Gestión en lista ----------
+  // --------- Listado + filtro por estado ----------
+  const filterSelect = document.getElementById('stateFilter');
+  let FILTER = filterSelect ? filterSelect.value : 'pending';
+
+  filterSelect.addEventListener('change', () => {
+    FILTER = filterSelect.value;
+    render();
+  });
+
   async function fetchAll() {
-    const r = await fetch(`/api/orders`);
+    const r = await fetch(`/api/orders`, { cache: 'no-store' });
     return await r.json();
   }
 
@@ -126,21 +147,25 @@
     }
   }
 
+  function isDelivered(p) {
+    const st = (p.estado || '').toLowerCase();
+    return ['despachado','entregado','retirado'].includes(st);
+  }
+
   async function act(id, action) {
     await fetch(`/api/orders/${id}`, {
       method: 'PATCH',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({action})
     });
-    render();
+    await render();
   }
 
   function row(p) {
-    const st = (p.estado || '').toLowerCase();
-    const isDelivered = ['despachado','entregado','retirado'].includes(st);
-    const estadoLabel = isDelivered ? 'Entregado' : 'Pendiente';
-    const badge = isDelivered ? 'badge-red' : 'badge-green';
-    const rowCls = isDelivered ? 'row-red' : 'row-green';
+    const delivered = isDelivered(p);
+    const estadoLabel = delivered ? 'Entregado' : 'Pendiente';
+    const badge = delivered ? 'badge-red' : 'badge-green';
+    const rowCls = delivered ? 'row-red' : 'row-green';
 
     const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
     const hora = hhmm(p.hora_creacion);
@@ -148,11 +173,11 @@
     const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
     const det = p.detalle ? `<div class="sub">📝 ${esc(p.detalle)}${p.salsas ? ' — Salsas: ' + esc(p.salsas) : ''}</div>` : '';
 
-    // Acciones según modalidad
-    const extra =
-      p.modalidad === 'despacho'
-        ? `<button class="btn btn-sm" onclick="act(${p.id}, 'entregado')">Marcar Entregado</button>`
-        : `<button class="btn btn-sm" onclick="act(${p.id}, 'retirado')">Marcar Retirado</button>`;
+    // Acciones: solo "Marcar Entregado" (si aún no lo está) y "Editar"
+    const actions = `
+      ${delivered ? '' : `<button class="btn btn-sm" onclick="act(${p.id}, 'entregado')">Marcar Entregado</button>`}
+      <a class="btn btn-sm" href="/orders/${p.id}/edit">Editar</a>
+    `;
 
     return `
       <tr class="${rowCls}">
@@ -162,19 +187,22 @@
         <td><span class="badge ${badge}">${estadoLabel}</span></td>
         <td>${esc(pagoLabel(p.medio_pago))}</td>
         <td class="right">${total}</td>
-        <td class="actions">
-          <button class="btn btn-sm" onclick="act(${p.id}, 'next')">Siguiente</button>
-          ${extra}
-          <button class="btn btn-sm" onclick="act(${p.id}, 'cancel')">Cancelar</button>
-          <a class="btn btn-sm" href="/orders/${p.id}/edit">Editar</a>
-        </td>
+        <td class="actions">${actions}</td>
       </tr>
     `;
   }
 
   async function render() {
-    const all = await fetchAll();     // la API ya trae todos los estados
-    document.getElementById('orders_tbody').innerHTML = all.map(row).join('');
+    const all = await fetchAll();
+
+    let rows = all;
+    if (FILTER === 'pending') {
+      rows = all.filter(p => !isDelivered(p));
+    } else if (FILTER === 'delivered') {
+      rows = all.filter(p => isDelivered(p));
+    }
+
+    document.getElementById('orders_tbody').innerHTML = rows.map(row).join('');
   }
 
   render();
