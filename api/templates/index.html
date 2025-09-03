@@ -7,7 +7,7 @@
   <label>Nombre cliente<br><input name="cliente_nombre" required></label><br><br>
 
   <label>Teléfono<br>
-    <input name="telefono" placeholder="+56912345678">
+    <input name="telefono" type="tel" inputmode="numeric" autocomplete="tel" placeholder="+56912345678" pattern="[0-9+ ]*">
   </label><br><br>
 
   <!-- Selector de PROMO arriba de Detalle -->
@@ -309,3 +309,4 @@
 </script>
 
 {% endblock %}
+
