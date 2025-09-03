@@ -11,15 +11,22 @@
   </label><br><br>
 
   <label>Detalle (ej: 2 salmón, 1 pollo)<br>
-    <textarea name="detalle" required></textarea>
+    <textarea name="detalle" class="textarea-lg" rows="5" required style="width:100%"></textarea>
   </label><br><br>
 
   <fieldset>
-    <legend>Salsas</legend>
-    <label><input type="checkbox" name="salsas" value="soya"> Soya</label>
-    <label><input type="checkbox" name="salsas" value="spicy_mayo"> Spicy mayo</label>
-    <label><input type="checkbox" name="salsas" value="teriyaki"> Teriyaki</label>
+    <legend>Soya</legend>
+    <label>
+      <input type="number" name="soya_normal_qty" min="0" placeholder="0" style="width:70px">
+      Soya normal
+    </label>
+    <label style="margin-left:16px">
+      <input type="number" name="soya_dulce_qty" min="0" placeholder="0" style="width:70px">
+      Soya dulce
+    </label>
+    <div class="sub">Deja en blanco o 0 si no corresponde.</div>
   </fieldset><br>
+
 
   <fieldset>
     <legend>Modalidad</legend>
@@ -41,7 +48,9 @@
   </label><br><br>
 
   <label>Monto total (CLP)<br><input name="monto_total_clp" type="number" min="0"></label><br><br>
-  <label>Observaciones<br><input name="observaciones" placeholder="sin cebollín, etc."></label><br><br>
+  <label>Observaciones<br>
+    <textarea name="observaciones" class="textarea-lg" rows="3" style="width:100%" placeholder="sin cebollín, alérgenos, timbre, etc."></textarea>
+  </label><br><br>
 
   <button class="btn" type="submit">Crear pedido</button>
 </form>
@@ -71,6 +80,8 @@
 
   .toolbar { display:flex; align-items:center; gap:8px; margin: 8px 0 12px; }
   .toolbar select { padding:6px 8px; }
+
+  .textarea-lg { width:100%; min-height:90px; }
 </style>
 
 <div class="card">
@@ -161,6 +172,19 @@
     await render();
   }
 
+  function formatSoya(s) {
+    if (!s) return "";
+    const map = {};
+    s.split(";").forEach(pair => {
+      const [k, v] = pair.split(":");
+      if (k && v) map[k.trim()] = parseInt(v, 10) || 0;
+    });
+    const parts = [];
+    if (map.normal) parts.push(`Soya normal x${map.normal}`);
+    if (map.dulce)  parts.push(`Soya dulce x${map.dulce}`);
+    return parts.join(", ");
+  }
+
   function row(p) {
     const delivered = isDelivered(p);
     const estadoLabel = delivered ? 'Entregado' : 'Pendiente';
@@ -171,7 +195,11 @@
     const hora = hhmm(p.hora_creacion);
 
     const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
-    const det = p.detalle  ? `<div class="sub">📝 ${esc(p.detalle)}${p.salsas ? ' — Salsas: ' + esc(p.salsas) : ''}${p.observaciones ? ' — Obs: ' + esc(p.observaciones) : ''}</div>` : (p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : '');
+    const soyaTxt = formatSoya(p.salsas);
+    const det = (p.detalle || soyaTxt || p.observaciones)
+      ? `<div class="sub">📝 ${p.detalle ? esc(p.detalle) : ''}${soyaTxt ? (p.detalle ? ' — ' : '') + esc(soyaTxt) : ''}${p.observaciones ? (p.detalle || soyaTxt ? ' — ' : '') + 'Obs: ' + esc(p.observaciones) : ''}</div>`
+      : '';
+
 
 
     // Acciones: solo "Marcar Entregado" (si aún no lo está) y "Editar"
@@ -211,4 +239,5 @@
 </script>
 
 {% endblock %}
+
 
