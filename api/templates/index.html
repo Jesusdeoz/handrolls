@@ -152,8 +152,8 @@
 
   // --------- PROMOS: cargar y autocompletar -----------
   let PROMOS = [];
-  const promoInput = document.getElementById('promoSearch');
-  const promoList  = document.getElementById('promos_datalist');
+  const promoInput   = document.getElementById('promoSearch');
+  const promoList    = document.getElementById('promos_datalist');
   const detalleField = document.getElementById('detalleField');
   const montoField   = document.getElementById('montoField');
   const clearBtn     = document.getElementById('clearPromo');
@@ -171,22 +171,22 @@
     }
   }
 
+  // (1) ⛔️ Sin confirmaciones. Al elegir una promo, rellenamos sin preguntar.
   function tryApplyPromo() {
     const val = (promoInput.value || '').trim();
     if (!val) return;
     const p = PROMOS.find(x => String(x.promo_nro) === val);
     if (!p) return;
-    // Rellenar detalle y monto
-    if (p.detalle && (!detalleField.value || confirm('¿Reemplazar Detalle con la promo seleccionada?'))) {
-      detalleField.value = p.detalle;
-    }
-    if (p.monto != null && (montoField.value === '' || confirm('¿Reemplazar Monto con la promo seleccionada?'))) {
-      montoField.value = parseInt(p.monto, 10) || 0;
-    }
+
+    // ✅ Sobrescribe directamente
+    detalleField.value = p.detalle || '';
+    montoField.value   = (p.monto != null) ? (parseInt(p.monto, 10) || 0) : '';
   }
 
+  // (2) ✅ Usa SOLO 'change' para evitar dobles disparos (quitamos 'blur')
   promoInput.addEventListener('change', tryApplyPromo);
-  promoInput.addEventListener('blur', tryApplyPromo);
+
+  // (3) Botón "Limpiar" solo borra la selección de promo
   clearBtn.addEventListener('click', () => {
     promoInput.value = '';
   });
@@ -309,4 +309,5 @@
 </script>
 
 {% endblock %}
+
 
