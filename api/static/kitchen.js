@@ -34,20 +34,28 @@ function isDelivered(p) {
 function row(p) {
   const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
   const hora = hhmm(p.hora_creacion);
+
   const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
-  const det = p.detalle ? `<div class="sub">📝 ${esc(p.detalle)}${p.salsas ? ' — Salsas: ' + esc(p.salsas) : ''}</div>` : '';
+
+  // 📝 Detalle + salsas + observaciones (cada uno si existe)
+  const det = p.detalle ? `📝 ${esc(p.detalle)}` : '';
+  const sals = p.salsas ? `Salsas: ${esc(p.salsas)}` : '';
+  const obs  = p.observaciones ? `Obs: ${esc(p.observaciones)}` : '';
+  const detailBlock = [det, sals, obs].filter(Boolean).join(' — ');
+  const detailHtml = detailBlock ? `<div class="sub">${detailBlock}</div>` : '';
 
   return `
     <tr class="row-green">
       <td>#${p.id}</td>
       <td>${hora}</td>
-      <td>${esc(p.cliente_nombre)} ${tel} ${det}</td>
+      <td>${esc(p.cliente_nombre)} ${tel} ${detailHtml}</td>
       <td><span class="badge badge-green">Pendiente</span></td>
       <td>${esc(pagoLabel(p.medio_pago))}</td>
       <td class="right">${total}</td>
     </tr>
   `;
 }
+
 
 async function render() {
   try {
@@ -66,3 +74,4 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
