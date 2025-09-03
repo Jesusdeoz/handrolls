@@ -171,7 +171,8 @@
     const hora = hhmm(p.hora_creacion);
 
     const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
-    const det = p.detalle ? `<div class="sub">📝 ${esc(p.detalle)}${p.salsas ? ' — Salsas: ' + esc(p.salsas) : ''}</div>` : '';
+    const det = p.detalle  ? `<div class="sub">📝 ${esc(p.detalle)}${p.salsas ? ' — Salsas: ' + esc(p.salsas) : ''}${p.observaciones ? ' — Obs: ' + esc(p.observaciones) : ''}</div>` : (p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : '');
+
 
     // Acciones: solo "Marcar Entregado" (si aún no lo está) y "Editar"
     const actions = `
@@ -210,3 +211,4 @@
 </script>
 
 {% endblock %}
+
