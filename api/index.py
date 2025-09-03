@@ -52,6 +52,7 @@ def kitchen():
 @app.route("/orders", methods=["POST"])
 def create_order():
     cliente = request.form["cliente_nombre"].strip()
+    telefono = request.form.get("telefono")
     detalle = request.form["detalle"].strip()
     salsas = ",".join(request.form.getlist("salsas"))
     modalidad = request.form["modalidad"]
@@ -62,13 +63,13 @@ def create_order():
     observaciones = request.form.get("observaciones")
 
     exec_sql(
-        """
-        insert into public.orders
-        (cliente_nombre, detalle, salsas, medio_pago, modalidad, direccion, comuna, monto_total_clp, estado, observaciones)
-        values (%s,%s,%s,%s,%s,%s,%s,%s,'nuevo',%s)
-        """,
-        (cliente, detalle, salsas, medio_pago, modalidad, direccion, comuna, monto, observaciones)
-    )
+    """
+    insert into public.orders
+    (cliente_nombre, telefono, detalle, salsas, medio_pago, modalidad, direccion, comuna, monto_total_clp, estado, observaciones)
+    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,'nuevo',%s)
+    """,
+    (cliente, telefono, detalle, salsas, medio_pago, modalidad, direccion, comuna, monto, observaciones)
+)
     return redirect("/kitchen")
 
 @app.route("/api/orders")
@@ -128,5 +129,6 @@ def health():
         print("HEALTH ERROR:", e)
         traceback.print_exc()
         return jsonify({"ok": False, "error": str(e)}), 500
+
 
 
