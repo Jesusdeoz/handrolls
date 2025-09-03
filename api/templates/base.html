@@ -1,24 +1,54 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{% block title %}{% endblock %} — HandRolls</title>
+  <meta charset="utf-8">
+  <!-- 🔑 Hace que la página escale bien en celulares -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>{% block title %}App{% endblock %}</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 1rem auto; max-width: 900px; }
-    header { display:flex; gap:1rem; align-items:center; margin-bottom:1rem; }
-    .row { display:grid; gap:1rem; grid-template-columns: 1fr 1fr; }
-    .card { border:1px solid #ddd; border-radius:12px; padding:12px; }
-    .btn { padding:8px 12px; border:1px solid #333; border-radius:8px; background:#f7f7f7; cursor:pointer;}
-    .btn+.btn{ margin-left:.5rem; }
-    .badge { padding:2px 8px; border-radius:999px; background:#eee; }
+    :root{
+      --bg:#f8fafc; --card:#ffffff; --b:#e5e7eb; --txt:#111827; --muted:#6b7280;
+      --green:#16a34a; --green-200:#dcfce7; --red:#dc2626; --red-200:#fee2e2;
+    }
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;}
+    a{color:#2563eb;text-decoration:none}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .nav{display:flex;gap:12px;align-items:center;margin:8px 0 16px}
+    .nav a{padding:6px 10px;border-radius:8px;border:1px solid var(--b);background:#fff}
+    .card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:16px;margin:12px 0;overflow-x:auto}
+    .btn{display:inline-block;background:#111827;color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
+    .btn:hover{filter:brightness(0.95)}
+    .btn-sm{padding:8px 10px;font-size:14px;border-radius:8px}
+    .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+    .badge-green{background:var(--green-200);color:#166534}
+    .badge-red{background:var(--red-200);color:#991b1b}
+    .table{width:100%;border-collapse:collapse}
+    .table thead th{ text-align:left; font-weight:600; padding:12px; border-bottom:1px solid var(--b); color:#374151; }
+    .table tbody td{ padding:12px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+    .right{text-align:right}
+    .sub{color:var(--muted);font-size:12px}
+    input,select,textarea{padding:10px;border:1px solid var(--b);border-radius:10px}
+    label{display:block}
+    fieldset{border:1px dashed var(--b);border-radius:10px;padding:12px}
+    legend{padding:0 6px;color:#374151}
+
+    /* 📱 Móvil: botones e inputs más grandes y la tabla hace scroll lateral */
+    @media (max-width: 768px){
+      .container{padding:12px}
+      .btn,.btn-sm{padding:12px 14px;font-size:16px;touch-action:manipulation}
+      input,select,textarea{font-size:16px;width:100%}
+      .nav{flex-wrap:wrap}
+      .table{display:block;overflow-x:auto;white-space:nowrap}
+    }
   </style>
 </head>
 <body>
-<header>
-  <h1>HandRolls</h1>
-  <nav><a href="/">Nuevo pedido</a> | <a href="/kitchen">Cocina</a></nav>
-</header>
-{% block content %}{% endblock %}
+  <div class="container">
+    <div class="nav">
+      <a href="/">Mostrador</a>
+      <a href="/kitchen">Cocina</a>
+    </div>
+    {% block content %}{% endblock %}
+  </div>
 </body>
 </html>
