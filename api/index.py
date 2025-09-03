@@ -48,6 +48,32 @@ def close_db(_exc):
     if db is not None:
         db.close()
 
+def _to_int(x):
+    try:
+        v = int(x)
+        return max(v, 0)
+    except Exception:
+        return 0
+
+def build_soya_string(soya_normal_qty, soya_dulce_qty):
+    n = _to_int(soya_normal_qty)
+    d = _to_int(soya_dulce_qty)
+    # devuelve None si no hay nada (para dejar la columna vacía)
+    return None if (n == 0 and d == 0) else f"normal:{n};dulce:{d}"
+
+def parse_soya_string(s):
+    n = d = 0
+    if s:
+        for part in s.split(";"):
+            if ":" in part:
+                k, v = part.split(":", 1)
+                if k.strip() == "normal":
+                    n = _to_int(v)
+                elif k.strip() == "dulce":
+                    d = _to_int(v)
+    return n, d
+
+
 # -------------------- DEBUG / DIAG --------------------
 @app.errorhandler(Exception)
 def _handle_any_error(e):
@@ -102,7 +128,10 @@ def create_order():
     cliente = request.form["cliente_nombre"].strip()
     telefono = request.form.get("telefono")
     detalle = request.form["detalle"].strip()
-    salsas = ",".join(request.form.getlist("salsas"))
+    soya_normal_qty = request.form.get("soya_normal_qty")
+    soya_dulce_qty  = request.form.get("soya_dulce_qty")
+    salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
+
     modalidad = request.form["modalidad"]
     medio_pago = request.form["medio_pago"]
     direccion = request.form.get("direccion") if modalidad == "despacho" else None
@@ -159,7 +188,12 @@ def edit_order(oid):
     o = fetch_one("select * from public.orders where id = %s", (oid,))
     if not o:
         abort(404)
-    return render_template("edit.html", o=o)
+    n, d = parse_soya_string(o.get("salsas"))
+    o2 = dict(o)
+    o2["soya_normal_qty"] = n
+    o2["soya_dulce_qty"]  = d
+    return render_template("edit.html", o=o2)
+
 
 # nombre y endpoint únicos para no chocar con update_order()
 @app.route("/orders/<int:oid>/update", methods=["POST"], endpoint="orders_update_form")
@@ -167,7 +201,10 @@ def update_order_form(oid):
     cliente = request.form["cliente_nombre"].strip()
     telefono = request.form.get("telefono")
     detalle = request.form["detalle"].strip()
-    salsas = ",".join(request.form.getlist("salsas"))
+    soya_normal_qty = request.form.get("soya_normal_qty")
+    soya_dulce_qty  = request.form.get("soya_dulce_qty")
+    salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
+
     modalidad = request.form["modalidad"]
     medio_pago = request.form["medio_pago"]
     direccion = request.form.get("direccion") if modalidad == "despacho" else None
@@ -185,3 +222,4 @@ def update_order_form(oid):
           direccion, comuna, monto, observaciones, oid))
 
     return redirect("/")
+
