@@ -4,6 +4,8 @@
 <h2>Crear pedido</h2>
 <form method="post" action="/orders" class="card">
   <label>Nombre cliente<br><input name="cliente_nombre" required></label><br><br>
+  <label>Teléfono<br><input name="telefono" placeholder="+56912345678"></label><br><br>
+
   <label>Detalle (ej: 2 salmón, 1 pollo)<br>
     <textarea name="detalle" required></textarea>
   </label><br><br>
@@ -130,3 +132,4 @@
   setInterval(render, 4000);
 </script>
 {% endblock %}
+
