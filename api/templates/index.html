@@ -10,8 +10,17 @@
     <input name="telefono" placeholder="+56912345678">
   </label><br><br>
 
+  <!-- Selector de PROMO arriba de Detalle -->
+  <label>Promoción (opcional)<br>
+    <input id="promoSearch" list="promos_datalist" placeholder="Escribe o elige N° de promo" autocomplete="off" style="width:240px">
+    <datalist id="promos_datalist"></datalist>
+    <button type="button" class="btn btn-sm" id="clearPromo">Limpiar</button>
+  </label>
+  <div class="sub">Al elegir una promo, se rellenan automáticamente Detalle y Monto. Luego puedes ajustar si quieres.</div>
+  <br>
+
   <label>Detalle (ej: 2 salmón, 1 pollo)<br>
-    <textarea name="detalle" class="textarea-lg" rows="5" required style="width:100%"></textarea>
+    <textarea name="detalle" id="detalleField" class="textarea-lg" rows="5" required style="width:100%"></textarea>
   </label><br><br>
 
   <fieldset>
@@ -26,7 +35,6 @@
     </label>
     <div class="sub">Deja en blanco o 0 si no corresponde.</div>
   </fieldset><br>
-
 
   <fieldset>
     <legend>Modalidad</legend>
@@ -47,7 +55,10 @@
     </select>
   </label><br><br>
 
-  <label>Monto total (CLP)<br><input name="monto_total_clp" type="number" min="0"></label><br><br>
+  <label>Monto total (CLP)<br>
+    <input name="monto_total_clp" id="montoField" type="number" min="0">
+  </label><br><br>
+
   <label>Observaciones<br>
     <textarea name="observaciones" class="textarea-lg" rows="3" style="width:100%" placeholder="sin cebollín, alérgenos, timbre, etc."></textarea>
   </label><br><br>
@@ -111,6 +122,23 @@
   </table>
 </div>
 
+<hr>
+
+<h2>Promos</h2>
+<p class="sub">Crea o actualiza tus promociones. El <strong>nº de promo</strong> debe ser único.</p>
+<form method="post" action="/promos" class="card">
+  <label>Nº Promo<br>
+    <input name="promo_nro" required placeholder="ej: 101">
+  </label><br><br>
+  <label>Detalle promo<br>
+    <textarea name="promo_detalle" class="textarea-lg" rows="3" style="width:100%" required></textarea>
+  </label><br><br>
+  <label>Monto promo (CLP)<br>
+    <input name="promo_monto" type="number" min="0" required>
+  </label><br><br>
+  <button class="btn" type="submit">Guardar promoción</button>
+</form>
+
 <script>
   // Mostrar/ocultar dirección según modalidad en el formulario de "Crear pedido"
   const radios = document.querySelectorAll('input[name="modalidad"]');
@@ -121,6 +149,49 @@
   }
   radios.forEach(r=>r.addEventListener('change', toggleDir));
   toggleDir();
+
+  // --------- PROMOS: cargar y autocompletar -----------
+  let PROMOS = [];
+  const promoInput = document.getElementById('promoSearch');
+  const promoList  = document.getElementById('promos_datalist');
+  const detalleField = document.getElementById('detalleField');
+  const montoField   = document.getElementById('montoField');
+  const clearBtn     = document.getElementById('clearPromo');
+
+  async function loadPromos() {
+    try {
+      const r = await fetch('/api/promos', { cache: 'no-store' });
+      PROMOS = await r.json();
+      promoList.innerHTML = PROMOS.map(p => {
+        const label = `${p.promo_nro} — ${p.detalle} (${Number(p.monto || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' })})`;
+        return `<option value="${p.promo_nro}" label="${label}"></option>`;
+      }).join('');
+    } catch (e) {
+      console.error('Error cargando promos', e);
+    }
+  }
+
+  function tryApplyPromo() {
+    const val = (promoInput.value || '').trim();
+    if (!val) return;
+    const p = PROMOS.find(x => String(x.promo_nro) === val);
+    if (!p) return;
+    // Rellenar detalle y monto
+    if (p.detalle && (!detalleField.value || confirm('¿Reemplazar Detalle con la promo seleccionada?'))) {
+      detalleField.value = p.detalle;
+    }
+    if (p.monto != null && (montoField.value === '' || confirm('¿Reemplazar Monto con la promo seleccionada?'))) {
+      montoField.value = parseInt(p.monto, 10) || 0;
+    }
+  }
+
+  promoInput.addEventListener('change', tryApplyPromo);
+  promoInput.addEventListener('blur', tryApplyPromo);
+  clearBtn.addEventListener('click', () => {
+    promoInput.value = '';
+  });
+
+  loadPromos();
 
   // --------- Listado + filtro por estado ----------
   const filterSelect = document.getElementById('stateFilter');
@@ -172,6 +243,7 @@
     await render();
   }
 
+  // Formatea "normal:2;dulce:1" a una cadena legible
   function formatSoya(s) {
     if (!s) return "";
     const map = {};
@@ -199,8 +271,6 @@
     const det = (p.detalle || soyaTxt || p.observaciones)
       ? `<div class="sub">📝 ${p.detalle ? esc(p.detalle) : ''}${soyaTxt ? (p.detalle ? ' — ' : '') + esc(soyaTxt) : ''}${p.observaciones ? (p.detalle || soyaTxt ? ' — ' : '') + 'Obs: ' + esc(p.observaciones) : ''}</div>`
       : '';
-
-
 
     // Acciones: solo "Marcar Entregado" (si aún no lo está) y "Editar"
     const actions = `
@@ -239,5 +309,3 @@
 </script>
 
 {% endblock %}
-
-
