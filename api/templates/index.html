@@ -25,16 +25,22 @@
 
   <fieldset>
     <legend>Soya</legend>
-    <label>
-      <input type="number" name="soya_normal_qty" min="0" placeholder="0" style="width:70px">
-      Soya normal
-    </label>
-    <label style="margin-left:16px">
-      <input type="number" name="soya_dulce_qty" min="0" placeholder="0" style="width:70px">
-      Soya dulce
-    </label>
+  
+    <div class="soya-wrap">
+      <label class="soya-row">
+        <input type="number" name="soya_normal_qty" min="0" placeholder="0">
+        <span>Soya normal</span>
+      </label>
+  
+      <label class="soya-row">
+        <input type="number" name="soya_dulce_qty" min="0" placeholder="0">
+        <span>Soya dulce</span>
+      </label>
+    </div>
+  
     <div class="sub">Deja en blanco o 0 si no corresponde.</div>
-  </fieldset><br>
+  </fieldset>
+
 
   <fieldset>
     <legend>Modalidad</legend>
@@ -93,6 +99,36 @@
   .toolbar select { padding:6px 8px; }
 
   .textarea-lg { width:100%; min-height:90px; }
+
+  .soya-wrap{
+    display: flex;
+    flex-wrap: wrap;         /* si no cabe, pasa abajo de forma prolija */
+    gap: 16px 24px;          /* fila x columna */
+    margin-bottom: 6px;
+  }
+  .soya-row{
+    display: inline-flex;
+    align-items: center;     /* centra verticalmente número y texto */
+    gap: 10px;
+    margin: 0;               /* evita saltos raros */
+  }
+  .soya-row input[type="number"]{
+    width: 80px;             /* tamaño fijo y parejo */
+    text-align: center;
+    padding: 8px 10px;
+    border: 1px solid var(--b, #e5e7eb);
+    border-radius: 10px;
+  }
+  
+  /* quita flechas en algunos navegadores para que no “empujen” el layout */
+  .soya-row input[type="number"]::-webkit-outer-spin-button,
+  .soya-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .soya-row input[type="number"] { -moz-appearance: textfield; }
+  
+  /* móvil: un pelín más compacto */
+  @media (max-width: 480px){
+    .soya-row input[type="number"]{ width: 68px; }
+  }
 </style>
 
 <div class="card">
@@ -309,5 +345,6 @@
 </script>
 
 {% endblock %}
+
 
 
