@@ -1,29 +1,37 @@
 {% extends "base.html" %}
 {% block title %}Nuevo pedido{% endblock %}
 {% block content %}
+
 <h2>Crear pedido</h2>
 <form method="post" action="/orders" class="card">
   <label>Nombre cliente<br><input name="cliente_nombre" required></label><br><br>
-  <label>Teléfono<br><input name="telefono" placeholder="+56912345678"></label><br><br>
+
+  <label>Teléfono<br>
+    <input name="telefono" placeholder="+56912345678">
+  </label><br><br>
 
   <label>Detalle (ej: 2 salmón, 1 pollo)<br>
     <textarea name="detalle" required></textarea>
   </label><br><br>
+
   <fieldset>
     <legend>Salsas</legend>
     <label><input type="checkbox" name="salsas" value="soya"> Soya</label>
     <label><input type="checkbox" name="salsas" value="spicy_mayo"> Spicy mayo</label>
     <label><input type="checkbox" name="salsas" value="teriyaki"> Teriyaki</label>
   </fieldset><br>
+
   <fieldset>
     <legend>Modalidad</legend>
     <label><input type="radio" name="modalidad" value="retiro" checked> Retiro</label>
     <label><input type="radio" name="modalidad" value="despacho"> Despacho</label>
   </fieldset><br>
+
   <div id="direccionBox" style="display:none">
     <label>Dirección<br><input name="direccion"></label><br><br>
     <label>Comuna<br><input name="comuna" placeholder="ej: Maipú"></label><br><br>
   </div>
+
   <label>Método de pago<br>
     <select name="medio_pago" required>
       <option value="debito_credito">Débito/Crédito</option>
@@ -31,75 +39,91 @@
       <option value="efectivo">Efectivo</option>
     </select>
   </label><br><br>
+
   <label>Monto total (CLP)<br><input name="monto_total_clp" type="number" min="0"></label><br><br>
   <label>Observaciones<br><input name="observaciones" placeholder="sin cebollín, etc."></label><br><br>
+
   <button class="btn" type="submit">Crear pedido</button>
 </form>
 
 <hr>
 
-<h2>Gestión de estados (solo mostrador)</h2>
-<p>Desde aquí cambias el estado de los pedidos. La cocina solo visualiza.</p>
+<h2>Gestión y edición de pedidos (solo mostrador)</h2>
+<p>La cocina solo visualiza.</p>
 
-<div class="row">
-  <div class="card">
-    <h3>Nuevo <span class="badge" id="c_nuevo">0</span></h3>
-    <div id="col_nuevo"></div>
-  </div>
-  <div class="card">
-    <h3>En preparación <span class="badge" id="c_prep">0</span></h3>
-    <div id="col_prep"></div>
-  </div>
-  <div class="card">
-    <h3>Listo <span class="badge" id="c_listo">0</span></h3>
-    <div id="col_listo"></div>
-  </div>
-  <div class="card">
-    <h3>Despachado <span class="badge" id="c_desp">0</span></h3>
-    <div id="col_desp"></div>
-  </div>
+<style>
+  .table { width:100%; border-collapse:collapse; }
+  .table thead th { text-align:left; font-weight:600; padding:12px; border-bottom:1px solid #e5e7eb; color:#374151; }
+  .table tbody td { padding:12px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+  .right { text-align:right; }
+  .sub { color:#6b7280; font-size:12px; }
+  .wrap { white-space: pre-wrap; word-break: break-word; }
+
+  .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+  .badge-green { background:#dcfce7; color:#166534; }  /* Pendiente */
+  .badge-red   { background:#fee2e2; color:#991b1b; }  /* Entregado */
+
+  .row-green { border-left:4px solid #22c55e; }
+  .row-red   { border-left:4px solid #ef4444; }
+
+  .btn-sm { padding:6px 8px; font-size:12px; }
+  .actions .btn-sm{ margin-right:6px; margin-bottom:6px; display:inline-block; }
+</style>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Pedido</th>
+        <th>Hora</th>
+        <th>Cliente</th>
+        <th>Estado</th>
+        <th>Pago</th>
+        <th class="right">Total</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="orders_tbody"></tbody>
+  </table>
 </div>
 
 <script>
   // Mostrar/ocultar dirección según modalidad
   const radios = document.querySelectorAll('input[name="modalidad"]');
   const box = document.getElementById('direccionBox');
-  function update() {
+  function toggleDir() {
     const v = [...radios].find(r=>r.checked)?.value;
     box.style.display = (v === 'despacho') ? '' : 'none';
   }
-  radios.forEach(r=>r.addEventListener('change', update));
-  update();
+  radios.forEach(r=>r.addEventListener('change', toggleDir));
+  toggleDir();
 
-  // Gestión de estados (con botones)
-  async function fetchEstado(estado) {
-    const res = await fetch(`/api/orders?estado=${estado}`);
-    return await res.json();
+  // --------- Gestión en lista ----------
+  async function fetchAll() {
+    const r = await fetch(`/api/orders`);
+    return await r.json();
   }
 
-  function cardGestion(p) {
-    const botones =
-      p.modalidad === 'despacho'
-        ? `
-          <button class="btn" onclick="act(${p.id}, 'next')">Siguiente</button>
-          <button class="btn" onclick="act(${p.id}, 'despachado')">Marcar Despachado</button>
-          <button class="btn" onclick="act(${p.id}, 'entregado')">Marcar Entregado</button>
-          <button class="btn" onclick="act(${p.id}, 'cancel')">Cancelar</button>
-        `
-        : `
-          <button class="btn" onclick="act(${p.id}, 'next')">Siguiente</button>
-          <button class="btn" onclick="act(${p.id}, 'retirado')">Marcar Retirado</button>
-          <button class="btn" onclick="act(${p.id}, 'cancel')">Cancelar</button>
-        `;
-    return `
-      <div class="card" style="margin:8px 0">
-        <strong>#${p.id}</strong> — ${p.cliente_nombre} <small>(${p.modalidad})</small><br>
-        <em>${p.detalle}</em><br>
-        Salsas: ${p.salsas || '-'}<br>
-        <small>Creado: ${p.hora_creacion}</small><br><br>
-        <div>${botones}</div>
-      </div>
-    `;
+  function hhmm(ts) {
+    const d = new Date(ts);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  function esc(s) {
+    return (s ?? '').toString().replace(/[&<>"']/g, m =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
+    );
+  }
+
+  function pagoLabel(v) {
+    switch ((v || '').toLowerCase()) {
+      case 'efectivo': return 'Efectivo';
+      case 'debito_credito': return 'Débito/Crédito';
+      case 'transferencia': return 'Transferencia';
+      default: return v || '-';
+    }
   }
 
   async function act(id, action) {
@@ -111,25 +135,50 @@
     render();
   }
 
+  function row(p) {
+    const st = (p.estado || '').toLowerCase();
+    const isDelivered = ['despachado','entregado','retirado'].includes(st);
+    const estadoLabel = isDelivered ? 'Entregado' : 'Pendiente';
+    const badge = isDelivered ? 'badge-red' : 'badge-green';
+    const rowCls = isDelivered ? 'row-red' : 'row-green';
+
+    const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
+    const hora = hhmm(p.hora_creacion);
+
+    const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
+    const det = p.detalle ? `<div class="sub">📝 ${esc(p.detalle)}${p.salsas ? ' — Salsas: ' + esc(p.salsas) : ''}</div>` : '';
+
+    // Acciones según modalidad
+    const extra =
+      p.modalidad === 'despacho'
+        ? `<button class="btn btn-sm" onclick="act(${p.id}, 'entregado')">Marcar Entregado</button>`
+        : `<button class="btn btn-sm" onclick="act(${p.id}, 'retirado')">Marcar Retirado</button>`;
+
+    return `
+      <tr class="${rowCls}">
+        <td>#${p.id}</td>
+        <td>${hora}</td>
+        <td>${esc(p.cliente_nombre)} ${tel} ${det}</td>
+        <td><span class="badge ${badge}">${estadoLabel}</span></td>
+        <td>${esc(pagoLabel(p.medio_pago))}</td>
+        <td class="right">${total}</td>
+        <td class="actions">
+          <button class="btn btn-sm" onclick="act(${p.id}, 'next')">Siguiente</button>
+          ${extra}
+          <button class="btn btn-sm" onclick="act(${p.id}, 'cancel')">Cancelar</button>
+          <a class="btn btn-sm" href="/orders/${p.id}/edit">Editar</a>
+        </td>
+      </tr>
+    `;
+  }
+
   async function render() {
-    const nuevo = await fetchEstado('nuevo');
-    const prep  = await fetchEstado('en_preparacion');
-    const listo = await fetchEstado('listo');
-    const desp  = await fetchEstado('despachado');
-
-    document.getElementById('c_nuevo').textContent = nuevo.length;
-    document.getElementById('c_prep').textContent  = prep.length;
-    document.getElementById('c_listo').textContent = listo.length;
-    document.getElementById('c_desp').textContent  = desp.length;
-
-    document.getElementById('col_nuevo').innerHTML = nuevo.map(cardGestion).join('');
-    document.getElementById('col_prep').innerHTML  = prep.map(cardGestion).join('');
-    document.getElementById('col_listo').innerHTML = listo.map(cardGestion).join('');
-    document.getElementById('col_desp').innerHTML  = desp.map(cardGestion).join('');
+    const all = await fetchAll();     // la API ya trae todos los estados
+    document.getElementById('orders_tbody').innerHTML = all.map(row).join('');
   }
 
   render();
   setInterval(render, 4000);
 </script>
-{% endblock %}
 
+{% endblock %}
