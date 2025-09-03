@@ -1,5 +1,5 @@
 async function fetchAll() {
-  const r = await fetch(`/api/orders`);
+  const r = await fetch(`/api/orders`, { cache: 'no-store' });
   return await r.json();
 }
 
@@ -10,7 +10,6 @@ function hhmm(ts) {
   return `${hh}:${mm}`;
 }
 
-// escapar para evitar XSS si llega texto con < >
 function esc(s) {
   return (s ?? '').toString().replace(/[&<>"']/g, m =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
@@ -26,42 +25,44 @@ function pagoLabel(v) {
   }
 }
 
-function row(p) {
+// Entregado = cualquiera de estos estados; Kitchen los OCULTA
+function isDelivered(p) {
   const st = (p.estado || '').toLowerCase();
-  const isDelivered = ['despachado', 'entregado', 'retirado'].includes(st);
-  const estadoLabel = isDelivered ? 'Entregado' : 'Pendiente';
-  const badge = isDelivered ? 'badge-red' : 'badge-green';
-  const rowCls = isDelivered ? 'row-red' : 'row-green';
+  return ['despachado','entregado','retirado'].includes(st);
+}
 
+function row(p) {
   const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
   const hora = hhmm(p.hora_creacion);
-
   const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
   const det = p.detalle ? `<div class="sub">📝 ${esc(p.detalle)}${p.salsas ? ' — Salsas: ' + esc(p.salsas) : ''}</div>` : '';
 
   return `
-    <tr class="${rowCls}">
+    <tr class="row-green">
       <td>#${p.id}</td>
       <td>${hora}</td>
       <td>${esc(p.cliente_nombre)} ${tel} ${det}</td>
-      <td><span class="badge ${badge}">${estadoLabel}</span></td>
+      <td><span class="badge badge-green">Pendiente</span></td>
       <td>${esc(pagoLabel(p.medio_pago))}</td>
       <td class="right">${total}</td>
     </tr>
   `;
 }
 
-
 async function render() {
   try {
     const all = await fetchAll();
-    // ya vienen ordenados por hora_creacion asc; si no, puedes ordenar aquí.
-    document.getElementById('orders_tbody').innerHTML = all.map(row).join('');
+    const pending = all.filter(p => !isDelivered(p)); // <-- SOLO PENDIENTES
+
+    const tbody = document.getElementById('orders_tbody');
+    const empty = document.getElementById('empty');
+
+    tbody.innerHTML = pending.map(row).join('');
+    empty.style.display = pending.length ? 'none' : 'block';
   } catch (e) {
-    console.error('render error', e);
+    console.error('Kitchen render error', e);
   }
 }
 
 render();
 setInterval(render, 4000);
-
