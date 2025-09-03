@@ -1,43 +1,64 @@
-async function fetchEstado(estado) {
-  const res = await fetch(`/api/orders?estado=${estado}`);
-  return await res.json();
+async function fetchAll() {
+  const r = await fetch(`/api/orders`);
+  return await r.json();
 }
 
-function cardSoloLectura(p, estadoColumna) {
-  // rojo para despachados/entregados/retirados, verde para el resto
-  const isDone = ['despachado', 'entregado', 'retirado'].includes(
-    (p.estado || estadoColumna || '').toLowerCase()
+function hhmm(ts) {
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+// escapar para evitar XSS si llega texto con < >
+function esc(s) {
+  return (s ?? '').toString().replace(/[&<>"']/g, m =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
   );
-  const cls = isDone ? 'order-done' : 'order-current';
+}
+
+function pagoLabel(v) {
+  switch ((v || '').toLowerCase()) {
+    case 'efectivo': return 'Efectivo';
+    case 'debito_credito': return 'Débito/Crédito';
+    case 'transferencia': return 'Transferencia';
+    default: return v || '-';
+  }
+}
+
+function row(p) {
+  // Pendiente = nuevo/en_preparacion/listo
+  // Entregado = despachado/entregado/retirado
+  const st = (p.estado || '').toLowerCase();
+  const isDelivered = ['despachado', 'entregado', 'retirado'].includes(st);
+  const estadoLabel = isDelivered ? 'Entregado' : 'Pendiente';
+  const badge = isDelivered ? 'badge-red' : 'badge-green';
+  const rowCls = isDelivered ? 'row-red' : 'row-green';
+
+  const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
+  const hora = hhmm(p.hora_creacion);
+
+  const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
   return `
-    <div class="card card-order ${cls}" style="margin:8px 0">
-      <strong>#${p.id}</strong> — ${p.cliente_nombre} <small>(${p.modalidad})</small><br>
-      <em>${p.detalle}</em><br>
-      Salsas: ${p.salsas || '-'}<br>
-      <small>Creado: ${p.hora_creacion}</small>
-    </div>
+    <tr class="${rowCls}">
+      <td>#${p.id}</td>
+      <td>${hora}</td>
+      <td>${esc(p.cliente_nombre)} ${tel}</td>
+      <td><span class="badge ${badge}">${estadoLabel}</span></td>
+      <td>${esc(pagoLabel(p.medio_pago))}</td>
+      <td class="right">${total}</td>
+    </tr>
   `;
 }
 
 async function render() {
   try {
-    const nuevo = await fetchEstado('nuevo');
-    const prep  = await fetchEstado('en_preparacion');
-    const listo = await fetchEstado('listo');
-    const desp  = await fetchEstado('despachado');
-
-    document.getElementById('c_nuevo').textContent = nuevo.length;
-    document.getElementById('c_prep').textContent  = prep.length;
-    document.getElementById('c_listo').textContent = listo.length;
-    document.getElementById('c_desp').textContent  = desp.length;
-
-    document.getElementById('col_nuevo').innerHTML = nuevo.map(p => cardSoloLectura(p, 'nuevo')).join('');
-    document.getElementById('col_prep').innerHTML  = prep.map(p => cardSoloLectura(p, 'en_preparacion')).join('');
-    document.getElementById('col_listo').innerHTML = listo.map(p => cardSoloLectura(p, 'listo')).join('');
-    document.getElementById('col_desp').innerHTML  = desp.map(p => cardSoloLectura(p, 'despachado')).join('');
+    const all = await fetchAll();
+    // ya vienen ordenados por hora_creacion asc; si no, puedes ordenar aquí.
+    document.getElementById('orders_tbody').innerHTML = all.map(row).join('');
   } catch (e) {
-    console.error('Error render()', e);
+    console.error('render error', e);
   }
 }
 
