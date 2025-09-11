@@ -66,7 +66,7 @@ function row(p) {
   const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
   const det  = p.detalle ? `📝 ${esc(p.detalle)}` : '';
   const soyaTxt = formatSoya(p.salsas);
-  const obs  = p.observaciones ? `Obs: ${esc(p.observaciones)}` : '';
+  const obs  = p.observaciones ? `<span class="obs">Obs: ${esc(p.observaciones)}</span>` : '';
   const detailBlock = [det, soyaTxt, obs].filter(Boolean).join(' — ');
   const detailHtml = detailBlock ? `<div class="sub">${detailBlock}</div>` : '';
 
@@ -99,4 +99,5 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
 
