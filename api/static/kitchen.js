@@ -73,7 +73,7 @@ function row(p) {
   const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
 
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
-    ? `<div class="sub">🥢 Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
+    ? `<div class="sub">Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
 
   const soyaTxt   = formatSoya(p.salsas);
   const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
@@ -120,4 +120,5 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
 
