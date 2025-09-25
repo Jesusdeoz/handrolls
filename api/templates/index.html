@@ -11,14 +11,16 @@
   </label><br><br>
 
   <!-- Selector de PROMO arriba de Detalle -->
-   <label>Promoción (opcional)<br>
-    <select id="promoSelect" style="min-width:260px">
+  <label>Promoción (opcional)</label>
+  <div class="promo-row">
+    <select id="promoSelect">
       <option value="">— Selecciona promo —</option>
     </select>
     <button type="button" class="btn btn-sm" id="clearPromo">Limpiar</button>
-  </label>
+  </div>
   <div class="sub">Al elegir una promo, se rellenan automáticamente Detalle y Monto. Luego puedes ajustar si quieres.</div>
   <br>
+
 
   <label>Detalle (ej: 2 salmón, 1 pollo)<br>
     <textarea name="detalle" id="detalleField" class="textarea-lg" rows="5" required style="width:100%"></textarea>
@@ -152,6 +154,28 @@
   @media (max-width: 480px){
     .soya-row input[type="number"]{ width: 68px; }
   }
+
+  /* Fila de Promoción: select + botón, que no rompan el ancho */
+  .promo-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .promo-row select{
+    flex:1 1 260px;  /* crece hasta llenar; base 260px */
+    min-width: 220px;
+  }
+  .promo-row .btn{
+    flex:0 0 auto;
+  }
+  
+  /* Inputs “estrechos” (soya/palitos) se apilan en pantallas chicas */
+  @media (max-width: 600px){
+    .soya-row{ width:100%; }
+    .soya-row input[type="number"]{ width:100%; max-width: 140px; }
+  }
+
 </style>
 
 <div class="card">
@@ -215,32 +239,27 @@
   const detalleField = document.getElementById('detalleField');
   const montoField   = document.getElementById('montoField');
   const clearBtn     = document.getElementById('clearPromo');
-
+  
   async function loadPromos() {
     try {
       const r = await fetch('/api/promos', { cache: 'no-store' });
       PROMOS = await r.json();
-
-      // poblar el <select>
       promoSelect.innerHTML = `<option value="">— Selecciona promo —</option>` +
         PROMOS.map(p => {
           const label = `${p.promo_nro} — ${p.detalle} (${Number(p.monto||0).toLocaleString('es-CL',{style:'currency',currency:'CLP'})})`;
           return `<option value="${p.promo_nro}">${label}</option>`;
         }).join('');
-    } catch (e) {
-      console.error('Error cargando promos', e);
-    }
+    } catch (e) { console.error('Error cargando promos', e); }
   }
-
   function applySelectedPromo() {
-    const val = promoSelect.value;
-    if (!val) return;
-    const p = PROMOS.find(x => String(x.promo_nro) === String(val));
+    const p = PROMOS.find(x => String(x.promo_nro) === String(promoSelect.value));
     if (!p) return;
-    // rellenar campos
     detalleField.value = p.detalle || '';
-    montoField.value   = (p.monto != null) ? (parseInt(p.monto, 10) || 0) : '';
+    montoField.value   = (p.monto != null) ? (parseInt(p.monto,10) || 0) : '';
   }
+  promoSelect.addEventListener('change', applySelectedPromo);
+  clearBtn.addEventListener('click', () => { promoSelect.value = ''; });
+  loadPromos();
 
   promoSelect.addEventListener('change', applySelectedPromo);
   clearBtn.addEventListener('click', () => { promoSelect.value = ''; });
@@ -390,6 +409,7 @@
 </script>
 
 {% endblock %}
+
 
 
 
