@@ -65,11 +65,22 @@ function row(p) {
   const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
   // --- Bloques ordenados y con saltos de línea preservados ---
+    // --- Bloques ordenados y con saltos de línea preservados ---
   const detBlock  = p.detalle ? `<div class="sub wrap">🧾 ${esc(p.detalle)}</div>` : "";
+
+  // NUEVO: pares de palitos debajo del detalle
+  const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
+    ? `<div class="sub">🥢 Pares de palitos: ${Number(p.palitos_pares)}</div>`
+    : "";
+
+  // Soya en línea aparte, con un pequeño margen arriba para separarlo de palitos
   const soyaTxt   = formatSoya(p.salsas);
-  const soyaBlock = soyaTxt ? `<div class="sub">Soya: ${esc(soyaTxt)}</div>` : "";
+  const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
+
   const obsBlock  = p.observaciones ? `<div class="sub"><span class="obs">Obs: ${esc(p.observaciones)}</span></div>` : "";
-  const detailHtml = detBlock + soyaBlock + obsBlock;
+
+  const detailHtml = detBlock + palitosBlock + soyaBlock + obsBlock;
+
 
   return `
     <tr class="row-green">
@@ -99,3 +110,4 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
