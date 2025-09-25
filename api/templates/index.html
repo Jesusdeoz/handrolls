@@ -1,14 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Nuevo pedido{% endblock %}
-
-{# --- Carga de CSS específico de esta página --- #}
-{% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
-{% endblock %}
-
 {% block content %}
-<h2>Crear pedido</h2>
 
+<h2>Crear pedido</h2>
 <form method="post" action="/orders" class="card">
   <label>Nombre cliente<br><input name="cliente_nombre" required></label><br><br>
 
@@ -16,7 +10,7 @@
     <input name="telefono" type="tel" inputmode="numeric" autocomplete="tel" placeholder="+56912345678" pattern="[0-9+ ]*">
   </label><br><br>
 
-  <!-- PROMO -->
+  <!-- Selector de PROMO arriba de Detalle -->
   <label>Promoción (opcional)</label>
   <div class="promo-row">
     <select id="promoSelect">
@@ -27,41 +21,44 @@
   <div class="sub">Al elegir una promo, se rellenan automáticamente Detalle y Monto. Luego puedes ajustar si quieres.</div>
   <br>
 
+
   <label>Detalle (ej: 2 salmón, 1 pollo)<br>
-    <textarea name="detalle" id="detalleField" class="textarea-lg" rows="5" required></textarea>
+    <textarea name="detalle" id="detalleField" class="textarea-lg" rows="5" required style="width:100%"></textarea>
   </label><br><br>
 
   <fieldset>
     <legend>Soya</legend>
+
     <div class="soya-wrap">
       <label class="soya-row">
         <input type="number" name="soya_normal_qty" min="0" placeholder="0">
         <span>Soya normal</span>
       </label>
+
       <label class="soya-row">
         <input type="number" name="soya_dulce_qty" min="0" placeholder="0">
         <span>Soya dulce</span>
       </label>
     </div>
+
     <div class="sub">Deja en blanco o 0 si no corresponde.</div>
   </fieldset>
 
   <fieldset>
     <legend>Palitos</legend>
+
     <label>Pares de palitos (opcional)<br>
-      <input type="number" name="palitos_pares" min="0" step="1" placeholder="0" class="w-100px">
+  <input type="number" name="palitos_pares" min="0" step="1" placeholder="0" style="width:100px">
     </label><br><br>
   </fieldset>
 
   <fieldset>
     <legend>Modalidad</legend>
-    <div class="modalidad-group">
-      <label><input type="radio" name="modalidad" value="retiro" checked> <span>Retiro</span></label>
-      <label><input type="radio" name="modalidad" value="despacho"> <span>Despacho</span></label>
-    </div>
+    <label><input type="radio" name="modalidad" value="retiro" checked> Retiro</label>
+    <label><input type="radio" name="modalidad" value="despacho"> Despacho</label>
   </fieldset><br>
 
-  <div id="direccionBox" class="hidden">
+  <div id="direccionBox" style="display:none">
     <label>Dirección<br><input name="direccion"></label><br><br>
     <label>Comuna<br><input name="comuna" placeholder="ej: Maipú"></label><br><br>
   </div>
@@ -79,7 +76,7 @@
   </label><br><br>
 
   <label>Observaciones<br>
-    <textarea name="observaciones" class="textarea-lg" rows="3" placeholder="sin cebollín, alérgenos, timbre, etc."></textarea>
+    <textarea name="observaciones" class="textarea-lg" rows="3" style="width:100%" placeholder="sin cebollín, alérgenos, timbre, etc."></textarea>
   </label><br><br>
 
   <button class="btn" type="submit">Crear pedido</button>
@@ -89,6 +86,97 @@
 
 <h2>Gestión y edición de pedidos (solo mostrador)</h2>
 <p>La cocina solo visualiza.</p>
+
+<style>
+  .table { width:100%; border-collapse: collapse; display: table; }
+  @media (max-width: 768px){
+    .table { display: block; overflow-x: auto; white-space: nowrap; }
+  }
+  .table { display: block; overflow-x: auto; white-space: nowrap; }
+  .table thead th { text-align:left; font-weight:600; padding:12px; border-bottom:1px solid #e5e7eb; color:#374151; }
+  .table tbody td { padding:12px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+  .right { text-align:right; }
+  .sub { color:#6b7280; font-size:12px; }
+  .wrap { white-space: pre-wrap; word-break: break-word; } /* <-- preserva saltos */
+
+  .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+  .badge-green { background:#dcfce7; color:#166534; }  /* Pendiente */
+  .badge-red   { background:#fee2e2; color:#991b1b; }  /* Entregado */
+
+  .badge-pay-green { background:#dcfce7; color:#166534; }
+  .badge-pay-red   { background:#fee2e2; color:#991b1b; }
+
+  .row-green { border-left:4px solid #22c55e; }
+  .row-red   { border-left:4px solid #ef4444; }
+
+  .btn-sm { padding:6px 8px; font-size:12px; }
+  .actions .btn-sm{ margin-right:6px; margin-bottom:6px; display:inline-block; }
+
+  .toolbar { display:flex; align-items:center; gap:8px; margin: 8px 0 12px; }
+  .toolbar select { padding:6px 8px; }
+
+  .textarea-lg { width:100%; min-height:90px; }
+
+  *,
+  *::before,
+  *::after { box-sizing: border-box; }
+  
+  .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; max-width:100%; overflow-x:hidden; }
+  
+  /* 📱 Controles fluidos por defecto */
+  input, select, textarea { width: 100%; max-width: 100%; }
+
+  /* Soya alineado */
+  .soya-wrap{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    margin-bottom: 6px;
+  }
+  .soya-row{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+  }
+  .soya-row input[type="number"]{
+    width: 80px;
+    text-align: center;
+    padding: 8px 10px;
+    border: 1px solid var(--b, #e5e7eb);
+    border-radius: 10px;
+  }
+  .soya-row input[type="number"]::-webkit-outer-spin-button,
+  .soya-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .soya-row input[type="number"] { -moz-appearance: textfield; }
+
+  @media (max-width: 480px){
+    .soya-row input[type="number"]{ width: 68px; }
+  }
+
+  /* Fila de Promoción: select + botón, que no rompan el ancho */
+  .promo-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .promo-row select{
+    flex:1 1 260px;  /* crece hasta llenar; base 260px */
+    min-width: 220px;
+  }
+  .promo-row .btn{
+    flex:0 0 auto;
+  }
+  
+  /* Inputs “estrechos” (soya/palitos) se apilan en pantallas chicas */
+  @media (max-width: 600px){
+    .soya-row{ width:100%; }
+    .soya-row input[type="number"]{ width:100%; max-width: 140px; }
+  }
+
+</style>
 
 <div class="card">
   <div class="toolbar">
@@ -101,22 +189,20 @@
     </label>
   </div>
 
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Pedido</th>
-          <th>Hora</th>
-          <th>Cliente</th>
-          <th>Estado</th>
-          <th>Pago</th>
-          <th class="right">Total</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="orders_tbody"></tbody>
-    </table>
-  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Pedido</th>
+        <th>Hora</th>
+        <th>Cliente</th>
+        <th>Estado</th>
+        <th>Pago</th>
+        <th class="right">Total</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="orders_tbody"></tbody>
+  </table>
 </div>
 
 <hr>
@@ -128,16 +214,217 @@
     <input name="promo_nro" required placeholder="ej: 101">
   </label><br><br>
   <label>Detalle promo<br>
-    <textarea name="promo_detalle" class="textarea-lg" rows="3" required></textarea>
+    <textarea name="promo_detalle" class="textarea-lg" rows="3" style="width:100%" required></textarea>
   </label><br><br>
   <label>Monto promo (CLP)<br>
     <input name="promo_monto" type="number" min="0" required>
   </label><br><br>
   <button class="btn" type="submit">Guardar promoción</button>
 </form>
+
+<script>
+  // Mostrar/ocultar dirección según modalidad en el formulario de "Crear pedido"
+  const radios = document.querySelectorAll('input[name="modalidad"]');
+  const box = document.getElementById('direccionBox');
+  function toggleDir() {
+    const v = [...radios].find(r=>r.checked)?.value;
+    box.style.display = (v === 'despacho') ? '' : 'none';
+  }
+  radios.forEach(r=>r.addEventListener('change', toggleDir));
+  toggleDir();
+
+  // --------- PROMOS: cargar y autocompletar -----------
+  let PROMOS = [];
+  const promoSelect  = document.getElementById('promoSelect');
+  const detalleField = document.getElementById('detalleField');
+  const montoField   = document.getElementById('montoField');
+  const clearBtn     = document.getElementById('clearPromo');
+
+  async function loadPromos() {
+    try {
+      const r = await fetch('/api/promos', { cache: 'no-store' });
+      PROMOS = await r.json();
+
+      // poblar el <select>
+      promoSelect.innerHTML = `<option value="">— Selecciona promo —</option>` +
+        PROMOS.map(p => {
+          const label = `${p.promo_nro} — ${p.detalle} (${Number(p.monto||0).toLocaleString('es-CL',{style:'currency',currency:'CLP'})})`;
+          return `<option value="${p.promo_nro}">${label}</option>`;
+        }).join('');
+    } catch (e) {
+      console.error('Error cargando promos', e);
+    }
+  }
+
+  function applySelectedPromo() {
+    const val = promoSelect.value;
+    if (!val) return;
+    const p = PROMOS.find(x => String(x.promo_nro) === String(val));
+    if (!p) return;
+    // rellenar campos
+    detalleField.value = p.detalle || '';
+    montoField.value   = (p.monto != null) ? (parseInt(p.monto, 10) || 0) : '';
+  }
+
+  promoSelect.addEventListener('change', applySelectedPromo);
+  clearBtn.addEventListener('click', () => { promoSelect.value = ''; });
+
+  loadPromos();
+
+  // --------- Listado + filtro por estado ----------
+  const filterSelect = document.getElementById('stateFilter');
+  let FILTER = filterSelect ? filterSelect.value : 'pending';
+
+  filterSelect.addEventListener('change', () => {
+    FILTER = filterSelect.value;
+    render();
+  });
+
+  async function fetchAll() {
+    const r = await fetch(`/api/orders`, { cache: 'no-store' });
+    return await r.json();
+  }
+
+  function hhmm(ts) {
+    const d = new Date(ts);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  function esc(s) {
+    return (s ?? '').toString().replace(/[&<>"']/g, m =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
+    );
+  }
+
+  function pagoLabel(v) {
+    switch ((v || '').toLowerCase()) {
+      case 'efectivo': return 'Efectivo';
+      case 'debito_credito': return 'Débito/Crédito';
+      case 'transferencia': return 'Transferencia';
+      default: return v || '-';
+    }
+  }
+
+  function isDelivered(p) {
+    const st = (p.estado || '').toLowerCase();
+    return ['despachado','entregado','retirado'].includes(st);
+  }
+
+  async function act(id, action) {
+    await fetch(`/api/orders/${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action})
+    });
+    await render();
+  }
+
+  // Formatea "normal:2;dulce:1" a una cadena legible
+  function formatSoya(s) {
+    if (!s) return "";
+    const map = {};
+    s.split(";").forEach(pair => {
+      const [k, v] = pair.split(":");
+      if (k && v) map[k.trim()] = parseInt(v, 10) || 0;
+    });
+    const parts = [];
+    if (map.normal) parts.push(`Soya normal x${map.normal}`);
+    if (map.dulce)  parts.push(`Soya dulce x${map.dulce}`);
+    return parts.join(", ");
+  }
+
+  async function setPaid(id, paid){
+    await fetch(`/api/orders/${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'set_paid', paid})
+    });
+    await render();
+  }
+
+
+  function row(p) {
+    const delivered = isDelivered(p);
+    const estadoLabel = delivered ? 'Entregado' : 'Pendiente';
+    const badge = delivered ? 'badge-red' : 'badge-green';
+    const rowCls = delivered ? 'row-red' : 'row-green';
+  
+    const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
+    const hora = hhmm(p.hora_creacion);
+  
+    const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
+  
+    // Detalle + palitos + soya + obs
+    const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
+    const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
+      ? `<div class="sub">Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
+    const soyaTxt   = formatSoya(p.salsas);
+    const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
+    const obsBlock  = p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : "";
+    const det = detBlock + palitosBlock + soyaBlock + obsBlock;
+  
+    // ======= columna Pago: medio + estado de pago =======
+    const payBadge = p.pagado
+      ? `<span class="badge badge-pay-green">Pagado</span>`
+      : `<span class="badge badge-pay-red">Pendiente de pago</span>`;
+    const pagoCol = `${esc(pagoLabel(p.medio_pago))}<div class="sub" style="margin-top:4px">${payBadge}</div>`;
+  
+    // ======= acciones: botón de pago + editar / entregar =======
+    const payBtn = p.pagado
+      ? `<button class="btn btn-sm" onclick="setPaid(${p.id}, false)">Pendiente de Pago</button>`
+      : `<button class="btn btn-sm" onclick="setPaid(${p.id}, true)">Pagado</button>`;
+  
+    const actions = `
+      ${payBtn}
+      ${delivered ? '' : `<button class="btn btn-sm" onclick="act(${p.id}, 'entregado')">Marcar Entregado</button>`}
+      <a class="btn btn-sm" href="/orders/${p.id}/edit">Editar</a>
+    `;
+  
+    return `
+      <tr class="${rowCls}">
+        <td>#${p.id}</td>
+        <td>${hora}</td>
+        <td>${esc(p.cliente_nombre)} ${tel} ${det}</td>
+        <td><span class="badge ${badge}">${estadoLabel}</span></td>
+        <td>${pagoCol}</td>
+        <td class="right">${total}</td>
+        <td class="actions">${actions}</td>
+      </tr>
+    `;
+  }
+
+
+  async function render() {
+    const all = await fetchAll();
+
+    let rows = all;
+    if (FILTER === 'pending') {
+      rows = all.filter(p => !isDelivered(p));
+    } else if (FILTER === 'delivered') {
+      rows = all.filter(p => isDelivered(p));
+    }
+
+    document.getElementById('orders_tbody').innerHTML = rows.map(row).join('');
+  }
+
+  render();
+  setInterval(render, 4000);
+</script>
+
 {% endblock %}
 
-{# --- Carga del JS específico de esta página --- #}
-{% block extra_scripts %}
-<script src="{{ url_for('static', filename='index.js') }}"></script>
-{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
