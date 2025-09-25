@@ -137,6 +137,9 @@ def create_order():
     soya_dulce_qty  = request.form.get("soya_dulce_qty")
     salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
 
+    # NUEVO: pares de palitos
+    palitos_pares = int(request.form.get("palitos_pares") or 0)
+
     modalidad = request.form["modalidad"]
     medio_pago = request.form["medio_pago"]
     direccion = request.form.get("direccion") if modalidad == "despacho" else None
@@ -146,12 +149,12 @@ def create_order():
 
     exec_sql("""
         insert into public.orders
-        (cliente_nombre, telefono, detalle, salsas, medio_pago, modalidad, direccion, comuna, monto_total_clp, estado, observaciones)
-        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,'nuevo',%s)
-    """, (cliente, telefono, detalle, salsas, medio_pago, modalidad, direccion, comuna, monto, observaciones))
+        (cliente_nombre, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad, direccion, comuna, monto_total_clp, estado, observaciones)
+        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'nuevo',%s)
+    """, (cliente, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad, direccion, comuna, monto, observaciones))
 
     return redirect("/kitchen")
-
+    
 # -------------------- API: LISTAR / ACTUALIZAR ESTADO (ORDERS) --------------------
 @app.route("/api/orders")
 def list_orders():
@@ -208,6 +211,9 @@ def update_order_form(oid):
     soya_dulce_qty  = request.form.get("soya_dulce_qty")
     salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
 
+    # NUEVO: pares de palitos
+    palitos_pares = int(request.form.get("palitos_pares") or 0)
+
     modalidad = request.form["modalidad"]
     medio_pago = request.form["medio_pago"]
     direccion = request.form.get("direccion") if modalidad == "despacho" else None
@@ -218,10 +224,11 @@ def update_order_form(oid):
     exec_sql("""
       update public.orders
          set cliente_nombre=%s, telefono=%s, detalle=%s, salsas=%s,
+             palitos_pares=%s,
              medio_pago=%s, modalidad=%s, direccion=%s, comuna=%s,
              monto_total_clp=%s, observaciones=%s
        where id=%s
-    """, (cliente, telefono, detalle, salsas, medio_pago, modalidad,
+    """, (cliente, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad,
           direccion, comuna, monto, observaciones, oid))
 
     return redirect("/")
@@ -247,3 +254,4 @@ def create_or_update_promo():
                monto   = excluded.monto
     """, (promo_nro, p_detalle, p_monto))
     return redirect("/")
+
