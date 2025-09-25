@@ -304,11 +304,15 @@
     const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
     // ---- BLOQUES ORDENADOS: detalle (con saltos), soya y observación
-    const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
+    const detBlock  = p.detalle ? `<div class="sub wrap">🧾 ${esc(p.detalle)}</div>` : "";
+    const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
+      ? `<div class="sub">🥢 Pares de palitos: ${Number(p.palitos_pares)}</div>`
+      : "";
     const soyaTxt   = formatSoya(p.salsas);
-    const soyaBlock = soyaTxt ? `<div class="sub">Salsas: ${esc(soyaTxt)}</div>` : "";
+    const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
     const obsBlock  = p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : "";
-    const det = detBlock + soyaBlock + obsBlock;
+    const det = detBlock + palitosBlock + soyaBlock + obsBlock;
+
 
     // Acciones: solo "Marcar Entregado" (si aún no lo está) y "Editar"
     const actions = `
@@ -347,6 +351,7 @@
 </script>
 
 {% endblock %}
+
 
 
 
