@@ -70,12 +70,12 @@ function row(p) {
 
   // NUEVO: pares de palitos debajo del detalle
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
-    ? `<div class="sub">Pares de palitos: ${Number(p.palitos_pares)}</div>`
+    ? `<div class="sub" style="margin-top:6px">Pares de palitos: ${Number(p.palitos_pares)}</div>`
     : "";
 
   // Soya en línea aparte, con un pequeño margen arriba para separarlo de palitos
   const soyaTxt   = formatSoya(p.salsas);
-  const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
+  const soyaBlock = soyaTxt ? `<div class="sub">Soya: ${esc(soyaTxt)}</div>` : "";
 
   const obsBlock  = p.observaciones ? `<div class="sub"><span class="obs">Obs: ${esc(p.observaciones)}</span></div>` : "";
 
@@ -110,5 +110,6 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
 
 
