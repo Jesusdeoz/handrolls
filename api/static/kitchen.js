@@ -70,7 +70,7 @@ function row(p) {
 
   // NUEVO: pares de palitos debajo del detalle
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
-    ? `<div class="sub">🥢 Pares de palitos: ${Number(p.palitos_pares)}</div>`
+    ? `<div class="sub">Pares de palitos: ${Number(p.palitos_pares)}</div>`
     : "";
 
   // Soya en línea aparte, con un pequeño margen arriba para separarlo de palitos
@@ -110,4 +110,5 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
 
