@@ -25,22 +25,21 @@
 
   <fieldset>
     <legend>Soya</legend>
-  
+
     <div class="soya-wrap">
       <label class="soya-row">
         <input type="number" name="soya_normal_qty" min="0" placeholder="0">
         <span>Soya normal</span>
       </label>
-  
+
       <label class="soya-row">
         <input type="number" name="soya_dulce_qty" min="0" placeholder="0">
         <span>Soya dulce</span>
       </label>
     </div>
-  
+
     <div class="sub">Deja en blanco o 0 si no corresponde.</div>
   </fieldset>
-
 
   <fieldset>
     <legend>Modalidad</legend>
@@ -83,7 +82,7 @@
   .table tbody td { padding:12px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
   .right { text-align:right; }
   .sub { color:#6b7280; font-size:12px; }
-  .wrap { white-space: pre-wrap; word-break: break-word; }
+  .wrap { white-space: pre-wrap; word-break: break-word; } /* <-- preserva saltos */
 
   .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; }
   .badge-green { background:#dcfce7; color:#166534; }  /* Pendiente */
@@ -100,32 +99,30 @@
 
   .textarea-lg { width:100%; min-height:90px; }
 
+  /* Soya alineado */
   .soya-wrap{
     display: flex;
-    flex-wrap: wrap;         /* si no cabe, pasa abajo de forma prolija */
-    gap: 16px 24px;          /* fila x columna */
+    flex-wrap: wrap;
+    gap: 16px 24px;
     margin-bottom: 6px;
   }
   .soya-row{
     display: inline-flex;
-    align-items: center;     /* centra verticalmente número y texto */
+    align-items: center;
     gap: 10px;
-    margin: 0;               /* evita saltos raros */
+    margin: 0;
   }
   .soya-row input[type="number"]{
-    width: 80px;             /* tamaño fijo y parejo */
+    width: 80px;
     text-align: center;
     padding: 8px 10px;
     border: 1px solid var(--b, #e5e7eb);
     border-radius: 10px;
   }
-  
-  /* quita flechas en algunos navegadores para que no “empujen” el layout */
   .soya-row input[type="number"]::-webkit-outer-spin-button,
   .soya-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .soya-row input[type="number"] { -moz-appearance: textfield; }
-  
-  /* móvil: un pelín más compacto */
+
   @media (max-width: 480px){
     .soya-row input[type="number"]{ width: 68px; }
   }
@@ -207,25 +204,19 @@
     }
   }
 
-  // (1) ⛔️ Sin confirmaciones. Al elegir una promo, rellenamos sin preguntar.
+  // Al elegir una promo, rellenamos sin preguntar.
   function tryApplyPromo() {
     const val = (promoInput.value || '').trim();
     if (!val) return;
     const p = PROMOS.find(x => String(x.promo_nro) === val);
     if (!p) return;
 
-    // ✅ Sobrescribe directamente
     detalleField.value = p.detalle || '';
     montoField.value   = (p.monto != null) ? (parseInt(p.monto, 10) || 0) : '';
   }
 
-  // (2) ✅ Usa SOLO 'change' para evitar dobles disparos (quitamos 'blur')
   promoInput.addEventListener('change', tryApplyPromo);
-
-  // (3) Botón "Limpiar" solo borra la selección de promo
-  clearBtn.addEventListener('click', () => {
-    promoInput.value = '';
-  });
+  clearBtn.addEventListener('click', () => { promoInput.value = ''; });
 
   loadPromos();
 
@@ -303,10 +294,13 @@
     const hora = hhmm(p.hora_creacion);
 
     const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
-    const soyaTxt = formatSoya(p.salsas);
-    const det = (p.detalle || soyaTxt || p.observaciones)
-      ? `<div class="sub">📝 ${p.detalle ? esc(p.detalle) : ''}${soyaTxt ? (p.detalle ? ' — ' : '') + esc(soyaTxt) : ''}${p.observaciones ? (p.detalle || soyaTxt ? ' — ' : '') + 'Obs: ' + esc(p.observaciones) : ''}</div>`
-      : '';
+
+    // ---- BLOQUES ORDENADOS: detalle (con saltos), soya y observación
+    const detBlock  = p.detalle ? `<div class="sub wrap">🧾 ${esc(p.detalle)}</div>` : "";
+    const soyaTxt   = formatSoya(p.salsas);
+    const soyaBlock = soyaTxt ? `<div class="sub">Soya: ${esc(soyaTxt)}</div>` : "";
+    const obsBlock  = p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : "";
+    const det = detBlock + soyaBlock + obsBlock;
 
     // Acciones: solo "Marcar Entregado" (si aún no lo está) y "Editar"
     const actions = `
@@ -345,6 +339,3 @@
 </script>
 
 {% endblock %}
-
-
-
