@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Nuevo pedido{% endblock %}
+
+{# Si tu base.html NO tiene un bloque para la cabecera, puedes dejar
+   estos <link>/<script> al inicio del contenido (funciona igual).
+   Si SÍ tiene un bloque tipo {% block head %}, muévelos allí. #}
+
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+<script defer src="{{ url_for('static', filename='index.js') }}"></script>
+
+<h2>Crear pedido</h2>
+
+<form method="post" action="/orders" class="card">
+  <label>Nombre cliente<br><input name="cliente_nombre" required></label><br><br>
+
+  <label>Teléfono<br>
+    <input name="telefono" type="tel" inputmode="numeric" autocomplete="tel"
+           placeholder="+56912345678" pattern="[0-9+ ]*">
+  </label><br><br>
+
+  <!-- PROMO -->
+  <label>Promoción (opcional)</label>
+  <div class="promo-row">
+    <select id="promoSelect">
+      <option value="">— Selecciona promo —</option>
+    </select>
+    <button type="button" class="btn btn-sm" id="clearPromo">Limpiar</button>
+  </div>
+  <div class="sub">
+    Al elegir una promo, se rellenan automáticamente Detalle y Monto. Luego puedes ajustar si quieres.
+  </div>
+  <br>
+
+  <!-- DETALLE -->
+  <label>Detalle (ej: 2 salmón, 1 pollo)<br>
+    <textarea name="detalle" id="detalleField" class="textarea-lg" rows="5" required></textarea>
+  </label><br><br>
+
+  <!-- SOYA -->
+  <fieldset>
+    <legend>Soya</legend>
+    <div class="soya-wrap">
+      <label class="soya-row">
+        <input type="number" name="soya_normal_qty" min="0" placeholder="0">
+        <span>Soya normal</span>
+      </label>
+      <label class="soya-row">
+        <input type="number" name="soya_dulce_qty" min="0" placeholder="0">
+        <span>Soya dulce</span>
+      </label>
+    </div>
+    <div class="sub">Deja en blanco o 0 si no corresponde.</div>
+  </fieldset>
+
+  <!-- PALITOS -->
+  <fieldset>
+    <legend>Palitos</legend>
+    <label>Pares de palitos (opcional)<br>
+      <input type="number" name="palitos_pares" min="0" step="1" placeholder="0" class="w-100px">
+    </label><br><br>
+  </fieldset>
+
+  <!-- MODALIDAD -->
+  <fieldset>
+    <legend>Modalidad</legend>
+    <div class="modalidad-group">
+      <label><input type="radio" name="modalidad" value="retiro" checked> <span>Retiro</span></label>
+      <label><input type="radio" name="modalidad" value="despacho"> <span>Despacho</span></label>
+    </div>
+  </fieldset><br>
+
+  <!-- DIRECCIÓN (solo despacho) -->
+  <div id="direccionBox" style="display:none">
+    <label>Dirección<br><input name="direccion"></label><br><br>
+    <label>Comuna<br><input name="comuna" placeholder="ej: Maipú"></label><br><br>
+  </div>
+
+  <!-- PAGO / MONTO / OBS -->
+  <label>Método de pago<br>
+    <select name="medio_pago" required>
+      <option value="debito_credito">Débito/Crédito</option>
+      <option value="transferencia">Transferencia</option>
+      <option value="efectivo">Efectivo</option>
+    </select>
+  </label><br><br>
+
+  <label>Monto total (CLP)<br>
+    <input name="monto_total_clp" id="montoField" type="number" min="0">
+  </label><br><br>
+
+  <label>Observaciones<br>
+    <textarea name="observaciones" class="textarea-lg" rows="3" placeholder="sin cebollín, alérgenos, timbre, etc."></textarea>
+  </label><br><br>
+
+  <button class="btn" type="submit">Crear pedido</button>
+</form>
+
+<hr>
+
+<h2>Gestión y edición de pedidos (solo mostrador)</h2>
+<p class="sub">La cocina solo visualiza.</p>
+
+<div class="card">
+  <div class="toolbar">
+    <label>Mostrar:
+      <select id="stateFilter">
+        <option value="all">Todos</option>
+        <option value="pending" selected>Pendientes</option>
+        <option value="delivered">Entregados</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Pedido</th>
+          <th>Hora</th>
+          <th>Cliente</th>
+          <th>Estado</th>
+          <th>Pago</th>
+          <th class="right">Total</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="orders_tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<hr>
+
+<h2>Promos</h2>
+<p class="sub">Crea o actualiza tus promociones. El <strong>nº de promo</strong> debe ser único.</p>
+
+<form method="post" action="/promos" class="card">
+  <label>Nº Promo<br>
+    <input name="promo_nro" required placeholder="ej: 101">
+  </label><br><br>
+
+  <label>Detalle promo<br>
+    <textarea name="promo_detalle" class="textarea-lg" rows="3" required></textarea>
+  </label><br><br>
+
+  <label>Monto promo (CLP)<br>
+    <input name="promo_monto" type="number" min="0" required>
+  </label><br><br>
+
+  <button class="btn" type="submit">Guardar promoción</button>
+</form>
+
+{% endblock %}
