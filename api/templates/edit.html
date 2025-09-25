@@ -74,6 +74,13 @@
   </fieldset><br>
 
   <fieldset>
+    <legend>Palitos</legend>
+    <label>Pares de palitos (opcional)<br>
+      <input type="number" name="palitos_pares" min="0" step="1" placeholder="0"
+             value="{{ o.palitos_pares or 0 }}" style="width:100px">
+      </label><br><br>
+
+  <fieldset>
     <legend>Modalidad</legend>
     <label>
       <input type="radio" name="modalidad" value="retiro"  {% if o.modalidad=='retiro' %}checked{% endif %}>
