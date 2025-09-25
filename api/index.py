@@ -91,7 +91,6 @@ def _routes():
 @app.route("/_diag")
 def _diag():
     info = {}
-    # rutas/plantillas/estáticos
     here = Path(__file__).resolve().parent
     tpl_dir = Path(app.template_folder or "templates")
     static_dir = Path(app.static_folder or "static")
@@ -99,10 +98,8 @@ def _diag():
     info["static_folder"] = str(static_dir)
     info["templates_list"] = sorted([p.name for p in (here / tpl_dir).glob("*")]) if (here / tpl_dir).exists() else []
     info["static_list"] = sorted([p.name for p in (here / static_dir).glob("*")]) if (here / static_dir).exists() else []
-    # DB redacted
     u = urlparse(DATABASE_URL)
     info["database_url_redacted"] = f"{u.scheme}://{u.username or ''}:***@{u.hostname}:{u.port}{u.path}{('?' + u.query) if u.query else ''}"
-    # ping y tabla
     row = fetch_one("select 1 as ok")
     info["db_ok"] = bool(row and row["ok"] == 1)
     reg = fetch_one("select to_regclass('public.orders') as reg")
@@ -110,8 +107,6 @@ def _diag():
     if info["orders_table_exists"]:
         cnt = fetch_one("select count(*) as n from public.orders")
         info["orders_count"] = cnt["n"]
-    info["edit_template_found"] = "edit.html" in info["templates_list"]
-    # promos
     preg = fetch_one("select to_regclass('public.promos') as reg")
     info["promos_table_exists"] = bool(preg and preg["reg"])
     return jsonify(info)
@@ -137,7 +132,7 @@ def create_order():
     soya_dulce_qty  = request.form.get("soya_dulce_qty")
     salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
 
-    # NUEVO: pares de palitos
+    # pares de palitos (opcional)
     palitos_pares = int(request.form.get("palitos_pares") or 0)
 
     modalidad = request.form["modalidad"]
@@ -149,12 +144,12 @@ def create_order():
 
     exec_sql("""
         insert into public.orders
-        (cliente_nombre, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad, direccion, comuna, monto_total_clp, estado, observaciones)
-        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'nuevo',%s)
+        (cliente_nombre, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad, direccion, comuna, monto_total_clp, estado, observaciones, pagado)
+        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'nuevo',%s,false)
     """, (cliente, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad, direccion, comuna, monto, observaciones))
 
     return redirect("/kitchen")
-    
+
 # -------------------- API: LISTAR / ACTUALIZAR ESTADO (ORDERS) --------------------
 @app.route("/api/orders")
 def list_orders():
@@ -169,10 +164,16 @@ NEXT = {
 @app.route("/api/orders/<int:oid>", methods=["PATCH"])
 def update_order(oid):
     data = request.get_json(force=True)
-    action = data.get("action")  # "next"|"cancel"|"despachado"|"entregado"|"retirado"
+    action = data.get("action")  # "next"|"cancel"|"despachado"|"entregado"|"retirado"|"set_paid"
     row = fetch_one("select id, estado from public.orders where id = %s", (oid,))
     if not row:
         return jsonify({"error": "not found"}), 404
+
+    # toggle/set paid
+    if action == "set_paid":
+        paid = bool(data.get("paid"))
+        exec_sql("update public.orders set pagado = %s where id = %s", (paid, oid))
+        return jsonify({"ok": True, "pagado": paid})
 
     estado = row["estado"]
     new_estado = estado
@@ -200,7 +201,6 @@ def edit_order(oid):
     o2["soya_dulce_qty"]  = d
     return render_template("edit.html", o=o2)
 
-# nombre y endpoint únicos para no chocar con update_order()
 @app.route("/orders/<int:oid>/update", methods=["POST"], endpoint="orders_update_form")
 def update_order_form(oid):
     cliente = request.form["cliente_nombre"].strip()
@@ -211,7 +211,6 @@ def update_order_form(oid):
     soya_dulce_qty  = request.form.get("soya_dulce_qty")
     salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
 
-    # NUEVO: pares de palitos
     palitos_pares = int(request.form.get("palitos_pares") or 0)
 
     modalidad = request.form["modalidad"]
@@ -232,26 +231,3 @@ def update_order_form(oid):
           direccion, comuna, monto, observaciones, oid))
 
     return redirect("/")
-
-# -------------------- PROMOS: API + FORM --------------------
-@app.route("/api/promos")
-def api_promos():
-    rows = fetch_all("select promo_nro, detalle, monto from public.promos order by promo_nro asc")
-    return jsonify(rows)
-
-@app.route("/promos", methods=["POST"])
-def create_or_update_promo():
-    promo_nro = request.form["promo_nro"].strip()
-    p_detalle = request.form["promo_detalle"].strip()
-    p_monto   = int(request.form.get("promo_monto") or 0)
-
-    # Requiere primary key (o unique) en promo_nro -> ver SQL arriba
-    exec_sql("""
-        insert into public.promos (promo_nro, detalle, monto)
-        values (%s,%s,%s)
-        on conflict (promo_nro) do update
-           set detalle = excluded.detalle,
-               monto   = excluded.monto
-    """, (promo_nro, p_detalle, p_monto))
-    return redirect("/")
-
