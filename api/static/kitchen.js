@@ -55,41 +55,61 @@ function isLate(ts) {
   return mins >= LATE_MINUTES;
 }
 
+async function setPaid(id, paid){
+  await fetch(`/api/orders/${id}`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({action:'set_paid', paid})
+  });
+  await render();
+}
+
 function row(p) {
-  const total = Number(p.monto_total_clp || 0)
-    .toLocaleString('es-CL', { style:'currency', currency:'CLP' });
+  const delivered = isDelivered(p);
+  const estadoLabel = delivered ? 'Entregado' : 'Pendiente';
+  const badge = delivered ? 'badge-red' : 'badge-green';
+  const rowCls = delivered ? 'row-red' : 'row-green';
+
+  const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
   const hora = hhmm(p.hora_creacion);
-  const late = isLate(p.hora_creacion);
-  const horaHtml = `<span class="time-badge${late ? ' time-badge-late' : ''}">${hora}</span>`;
 
-  const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
+  const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
-  // --- Bloques ordenados y con saltos de línea preservados ---
-    // --- Bloques ordenados y con saltos de línea preservados ---
-  const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
-
-  // NUEVO: pares de palitos debajo del detalle
+  // Detalle + palitos + soya + obs
+  const detBlock  = p.detalle ? `<div class="sub wrap">🧾 ${esc(p.detalle)}</div>` : "";
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
-    ? `<div class="sub" style="margin-top:6px">Pares de palitos: ${Number(p.palitos_pares)}</div>`
-    : "";
-
-  // Soya en línea aparte, con un pequeño margen arriba para separarlo de palitos
+    ? `<div class="sub">🥢 Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
   const soyaTxt   = formatSoya(p.salsas);
-  const soyaBlock = soyaTxt ? `<div class="sub">Soya: ${esc(soyaTxt)}</div>` : "";
+  const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
+  const obsBlock  = p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : "";
+  const det = detBlock + palitosBlock + soyaBlock + obsBlock;
 
-  const obsBlock  = p.observaciones ? `<div class="sub"><span class="obs">Obs: ${esc(p.observaciones)}</span></div>` : "";
+  // ======= columna Pago: medio + estado de pago =======
+  const payBadge = p.pagado
+    ? `<span class="badge badge-pay-green">Pagado</span>`
+    : `<span class="badge badge-pay-red">Pendiente de pago</span>`;
+  const pagoCol = `${esc(pagoLabel(p.medio_pago))}<div class="sub" style="margin-top:4px">${payBadge}</div>`;
 
-  const detailHtml = detBlock + palitosBlock + soyaBlock + obsBlock;
+  // ======= acciones: botón de pago + editar / entregar =======
+  const payBtn = p.pagado
+    ? `<button class="btn btn-sm" onclick="setPaid(${p.id}, false)">Pendiente de Pago</button>`
+    : `<button class="btn btn-sm" onclick="setPaid(${p.id}, true)">Pagado</button>`;
 
+  const actions = `
+    ${payBtn}
+    ${delivered ? '' : `<button class="btn btn-sm" onclick="act(${p.id}, 'entregado')">Marcar Entregado</button>`}
+    <a class="btn btn-sm" href="/orders/${p.id}/edit">Editar</a>
+  `;
 
   return `
-    <tr class="row-green">
+    <tr class="${rowCls}">
       <td>#${p.id}</td>
-      <td>${horaHtml}</td>
-      <td>${esc(p.cliente_nombre)} ${tel} ${detailHtml}</td>
-      <td><span class="badge badge-green">Pendiente</span></td>
-      <td>${esc(pagoLabel(p.medio_pago))}</td>
+      <td>${hora}</td>
+      <td>${esc(p.cliente_nombre)} ${tel} ${det}</td>
+      <td><span class="badge ${badge}">${estadoLabel}</span></td>
+      <td>${pagoCol}</td>
       <td class="right">${total}</td>
+      <td class="actions">${actions}</td>
     </tr>
   `;
 }
@@ -110,6 +130,7 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
 
 
 
