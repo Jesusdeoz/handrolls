@@ -11,9 +11,10 @@
   </label><br><br>
 
   <!-- Selector de PROMO arriba de Detalle -->
-  <label>Promoción (opcional)<br>
-    <input id="promoSearch" list="promos_datalist" placeholder="Escribe o elige N° de promo" autocomplete="off" style="width:240px">
-    <datalist id="promos_datalist"></datalist>
+   <label>Promoción (opcional)<br>
+    <select id="promoSelect" style="min-width:260px">
+      <option value="">— Selecciona promo —</option>
+    </select>
     <button type="button" class="btn btn-sm" id="clearPromo">Limpiar</button>
   </label>
   <div class="sub">Al elegir una promo, se rellenan automáticamente Detalle y Monto. Luego puedes ajustar si quieres.</div>
@@ -374,6 +375,7 @@
 </script>
 
 {% endblock %}
+
 
 
 
