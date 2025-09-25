@@ -201,6 +201,30 @@ def edit_order(oid):
     o2["soya_dulce_qty"]  = d
     return render_template("edit.html", o=o2)
 
+# === PROMOS API ===
+@app.route("/api/promos")
+def api_promos():
+    rows = fetch_all("select promo_nro, detalle, monto from public.promos order by promo_nro asc")
+    return jsonify(rows)
+
+# crear/actualizar promo desde el formulario de la sección "Promos" del index
+@app.route("/promos", methods=["POST"])
+def upsert_promo():
+    nro = (request.form.get("promo_nro") or "").strip()
+    det = (request.form.get("promo_detalle") or "").strip()
+    monto = int(request.form.get("promo_monto") or 0)
+    if not nro or not det:
+        return redirect("/")  # o 400
+    exec_sql("""
+        insert into public.promos(promo_nro, detalle, monto)
+        values (%s,%s,%s)
+        on conflict (promo_nro) do update set
+          detalle = excluded.detalle,
+          monto   = excluded.monto
+    """, (nro, det, monto))
+    return redirect("/")
+
+
 @app.route("/orders/<int:oid>/update", methods=["POST"], endpoint="orders_update_form")
 def update_order_form(oid):
     cliente = request.form["cliente_nombre"].strip()
@@ -231,3 +255,4 @@ def update_order_form(oid):
           direccion, comuna, monto, observaciones, oid))
 
     return redirect("/")
+
