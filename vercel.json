@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "now-python@0.2.0"
-    }
-  },
   "routes": [
     { "src": "/static/(.*)", "dest": "/static/$1" },
     { "src": "/(.*)", "dest": "/api/index.py" }
