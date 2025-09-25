@@ -70,7 +70,7 @@ function row(p) {
   const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
   // Bloques ordenados (cada uno en su línea):
-  const detBlock  = p.detalle ? `<div class="sub wrap">🧾 ${esc(p.detalle)}</div>` : "";
+  const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
 
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
     ? `<div class="sub">🥢 Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
@@ -120,3 +120,4 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
