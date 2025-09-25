@@ -1,100 +1,72 @@
 {% extends "base.html" %}
 {% block title %}Editar pedido #{{ o.id }}{% endblock %}
+
 {% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
 
 <h2>Editar pedido #{{ o.id }}</h2>
 
-<style>
-  .sub { color:#6b7280; font-size:12px; }
-  .textarea-lg { width:100%; min-height:90px; }
-  .card form label { display:block; }
-
-  /* ===== Alineado Soya ===== */
-  .soya-wrap{
-    display:flex;
-    flex-wrap:wrap;      /* si no cabe, salta a la siguiente línea */
-    gap:16px 24px;
-    margin-bottom:6px;
-  }
-  .soya-row{
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    margin:0;
-  }
-  .soya-row span{ line-height:1.2; }
-  .soya-row input[type="number"]{
-    width:80px;
-    text-align:center;
-    padding:8px 10px;
-    border:1px solid var(--b, #e5e7eb);
-    border-radius:10px;
-  }
-  .soya-row input[type="number"]::-webkit-outer-spin-button,
-  .soya-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
-  .soya-row input[type="number"] { -moz-appearance:textfield; }
-  @media (max-width:480px){
-    .soya-row input[type="number"]{ width:68px; }
-  }
-</style>
-
 <form method="post" action="/orders/{{ o.id }}/update" class="card">
-
   <label>Nombre cliente<br>
     <input name="cliente_nombre" value="{{ o.cliente_nombre }}" required>
   </label><br><br>
 
   <label>Teléfono<br>
     <input name="telefono" type="tel" inputmode="numeric" autocomplete="tel"
-           placeholder="+56912345678" pattern="[0-9+ ]*" value="{{ o.telefono or '' }}">
+           placeholder="+56912345678" pattern="[0-9+ ]*"
+           value="{{ o.telefono or '' }}">
   </label><br><br>
 
   <label>Detalle<br>
-    <textarea name="detalle" class="textarea-lg" rows="5" style="width:100%" required>{{ o.detalle }}</textarea>
+    <textarea name="detalle" class="textarea-lg" rows="5" required>{{ o.detalle or '' }}</textarea>
   </label><br><br>
 
   <fieldset>
     <legend>Soya</legend>
-
     <div class="soya-wrap">
       <label class="soya-row">
-        <input type="number" name="soya_normal_qty" min="0" step="1" inputmode="numeric"
-               placeholder="0" value="{{ o.soya_normal_qty }}">
+        <input type="number" name="soya_normal_qty" min="0" placeholder="0"
+               value="{{ o.soya_normal_qty or 0 }}">
         <span>Soya normal</span>
       </label>
 
       <label class="soya-row">
-        <input type="number" name="soya_dulce_qty" min="0" step="1" inputmode="numeric"
-               placeholder="0" value="{{ o.soya_dulce_qty }}">
+        <input type="number" name="soya_dulce_qty" min="0" placeholder="0"
+               value="{{ o.soya_dulce_qty or 0 }}">
         <span>Soya dulce</span>
       </label>
     </div>
-
     <div class="sub">Deja en blanco o 0 si no corresponde.</div>
-  </fieldset><br>
+  </fieldset>
 
   <fieldset>
     <legend>Palitos</legend>
     <label>Pares de palitos (opcional)<br>
-      <input type="number" name="palitos_pares" min="0" step="1" placeholder="0"
-             value="{{ o.palitos_pares or 0 }}" style="width:100px">
-      </label><br><br>
+      <input type="number" name="palitos_pares" min="0" step="1" placeholder="0" class="w-100px"
+             value="{{ o.palitos_pares or '' }}">
+    </label><br><br>
+  </fieldset>
 
   <fieldset>
     <legend>Modalidad</legend>
-    <label>
-      <input type="radio" name="modalidad" value="retiro"  {% if o.modalidad=='retiro' %}checked{% endif %}>
-      Retiro
-    </label>
-    <label>
-      <input type="radio" name="modalidad" value="despacho" {% if o.modalidad=='despacho' %}checked{% endif %}>
-      Despacho
-    </label>
+    <div class="modalidad-group">
+      <label>
+        <input type="radio" name="modalidad" value="retiro"
+               {% if (o.modalidad or 'retiro') == 'retiro' %}checked{% endif %}>
+        <span>Retiro</span>
+      </label>
+      <label>
+        <input type="radio" name="modalidad" value="despacho"
+               {% if o.modalidad == 'despacho' %}checked{% endif %}>
+        <span>Despacho</span>
+      </label>
+    </div>
   </fieldset><br>
 
-  <div id="direccionBox" style="display: {{ 'block' if o.modalidad=='despacho' else 'none' }}">
+  <div id="direccionBox" style="display:none">
     <label>Dirección<br><input name="direccion" value="{{ o.direccion or '' }}"></label><br><br>
-    <label>Comuna<br><input name="comuna" value="{{ o.comuna or '' }}"></label><br><br>
+    <label>Comuna<br><input name="comuna" placeholder="ej: Maipú" value="{{ o.comuna or '' }}"></label><br><br>
   </div>
 
   <label>Método de pago<br>
@@ -106,26 +78,29 @@
   </label><br><br>
 
   <label>Monto total (CLP)<br>
-    <input name="monto_total_clp" type="number" min="0" step="1" value="{{ o.monto_total_clp or 0 }}">
+    <input name="monto_total_clp" type="number" min="0" value="{{ o.monto_total_clp or 0 }}">
   </label><br><br>
 
   <label>Observaciones<br>
-    <textarea name="observaciones" class="textarea-lg" rows="3" style="width:100%">{{ o.observaciones or '' }}</textarea>
+    <textarea name="observaciones" class="textarea-lg" rows="3">{{ o.observaciones or '' }}</textarea>
   </label><br><br>
 
   <button class="btn" type="submit">Guardar cambios</button>
-  <a class="btn" href="/">Cancelar</a>
+  <a class="btn btn-sm" href="/">Volver</a>
 </form>
 
 <script>
   // Mostrar/ocultar dirección según modalidad
-  const radios = document.querySelectorAll('input[name="modalidad"]');
-  const box = document.getElementById('direccionBox');
-  function toggleDir() {
-    const v = [...radios].find(r=>r.checked)?.value;
-    box.style.display = (v === 'despacho') ? '' : 'none';
-  }
-  radios.forEach(r=>r.addEventListener('change', toggleDir));
+  (function(){
+    const radios = document.querySelectorAll('input[name="modalidad"]');
+    const box = document.getElementById('direccionBox');
+    function toggleDir(){
+      const v = [...radios].find(r=>r.checked)?.value;
+      box.style.display = (v === 'despacho') ? '' : 'none';
+    }
+    radios.forEach(r=>r.addEventListener('change', toggleDir));
+    toggleDir();
+  })();
 </script>
 
 {% endblock %}
