@@ -66,7 +66,7 @@ function row(p) {
 
   // --- Bloques ordenados y con saltos de línea preservados ---
     // --- Bloques ordenados y con saltos de línea preservados ---
-  const detBlock  = p.detalle ? `<div class="sub wrap">🧾 ${esc(p.detalle)}</div>` : "";
+  const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
 
   // NUEVO: pares de palitos debajo del detalle
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
@@ -110,6 +110,7 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
 
 
 
