@@ -86,7 +86,11 @@
 <p>La cocina solo visualiza.</p>
 
 <style>
-  .table { width:100%; border-collapse:collapse; }
+  .table { width:100%; border-collapse: collapse; display: table; }
+  @media (max-width: 768px){
+    .table { display: block; overflow-x: auto; white-space: nowrap; }
+  }
+  .table { display: block; overflow-x: auto; white-space: nowrap; }
   .table thead th { text-align:left; font-weight:600; padding:12px; border-bottom:1px solid #e5e7eb; color:#374151; }
   .table tbody td { padding:12px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
   .right { text-align:right; }
@@ -110,6 +114,16 @@
   .toolbar select { padding:6px 8px; }
 
   .textarea-lg { width:100%; min-height:90px; }
+
+  *,
+  *::before,
+  *::after { box-sizing: border-box; }
+  
+  .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; max-width:100%; overflow-x:hidden; }
+  
+  /* 📱 Controles fluidos por defecto */
+  input, select, textarea { width: 100%; max-width: 100%; }
 
   /* Soya alineado */
   .soya-wrap{
@@ -376,6 +390,7 @@
 </script>
 
 {% endblock %}
+
 
 
 
