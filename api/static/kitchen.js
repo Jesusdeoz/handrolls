@@ -27,7 +27,7 @@ function pagoLabel(v) {
   }
 }
 
-// Formatea la cadena "normal:2;dulce:1" a "Soya normal x2, Soya dulce x1"
+// Formatea "normal:2;dulce:1" a "Soya normal x2, Soya dulce x1"
 function formatSoya(s) {
   if (!s) return "";
   const map = {};
@@ -41,7 +41,7 @@ function formatSoya(s) {
   return parts.join(", ");
 }
 
-// Kitchen solo muestra pendientes (NO entregados/retirados/despachados)
+// Kitchen solo muestra pendientes
 function isDelivered(p) {
   const st = (p.estado || '').toLowerCase();
   return ['despachado','entregado','retirado'].includes(st);
@@ -60,15 +60,16 @@ function row(p) {
     .toLocaleString('es-CL', { style:'currency', currency:'CLP' });
   const hora = hhmm(p.hora_creacion);
   const late = isLate(p.hora_creacion);
-
   const horaHtml = `<span class="time-badge${late ? ' time-badge-late' : ''}">${hora}</span>`;
 
   const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
-  const det  = p.detalle ? `📝 ${esc(p.detalle)}` : '';
-  const soyaTxt = formatSoya(p.salsas);
-  const obs  = p.observaciones ? `<span class="obs">Obs: ${esc(p.observaciones)}</span>` : '';
-  const detailBlock = [det, soyaTxt, obs].filter(Boolean).join(' — ');
-  const detailHtml = detailBlock ? `<div class="sub">${detailBlock}</div>` : '';
+
+  // --- Bloques ordenados y con saltos de línea preservados ---
+  const detBlock  = p.detalle ? `<div class="sub wrap">🧾 ${esc(p.detalle)}</div>` : "";
+  const soyaTxt   = formatSoya(p.salsas);
+  const soyaBlock = soyaTxt ? `<div class="sub">Soya: ${esc(soyaTxt)}</div>` : "";
+  const obsBlock  = p.observaciones ? `<div class="sub"><span class="obs">Obs: ${esc(p.observaciones)}</span></div>` : "";
+  const detailHtml = detBlock + soyaBlock + obsBlock;
 
   return `
     <tr class="row-green">
@@ -86,9 +87,8 @@ async function render() {
   try {
     const all = await fetchAll();
     const pending = all.filter(p => !isDelivered(p)); // SOLO PENDIENTES
-
     const tbody = document.getElementById('orders_tbody');
-    const empty = document.getElementById('empty'); // si lo usas en kitchen.html
+    const empty = document.getElementById('empty'); // si lo usas
 
     tbody.innerHTML = pending.map(row).join('');
     if (empty) empty.style.display = pending.length ? 'none' : 'block';
@@ -99,5 +99,3 @@ async function render() {
 
 render();
 setInterval(render, 4000);
-
-
