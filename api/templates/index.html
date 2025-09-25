@@ -298,7 +298,7 @@
     // ---- BLOQUES ORDENADOS: detalle (con saltos), soya y observación
     const detBlock  = p.detalle ? `<div class="sub wrap">🧾 ${esc(p.detalle)}</div>` : "";
     const soyaTxt   = formatSoya(p.salsas);
-    const soyaBlock = soyaTxt ? `<div class="sub">Soya: ${esc(soyaTxt)}</div>` : "";
+    const soyaBlock = soyaTxt ? `<div class="sub">Salsas: ${esc(soyaTxt)}</div>` : "";
     const obsBlock  = p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : "";
     const det = detBlock + soyaBlock + obsBlock;
 
@@ -339,3 +339,4 @@
 </script>
 
 {% endblock %}
+
