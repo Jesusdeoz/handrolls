@@ -85,8 +85,7 @@
 
   <!-- PAGO / DESPACHO / TOTAL (oculto) / OBS -->
   <label>Método de pago<br>
-    <select name="medio_pago" required>
-      <option value="debito_credito" {% if o.medio_pago=='debito_credito' %}selected{% endif %}>Débito/Crédito</option>
+    <select name="medio_pago" required>      
       <option value="transferencia"  {% if o.medio_pago=='transferencia' %}selected{% endif %}>Transferencia</option>
       <option value="efectivo"       {% if o.medio_pago=='efectivo' %}selected{% endif %}>Efectivo</option>
     </select>
