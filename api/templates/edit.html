@@ -3,10 +3,11 @@
 {% block content %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+<script defer src="{{ url_for('static', filename='edit.js') }}"></script>
 
 <h2>Editar pedido #{{ o.id }}</h2>
 
-<form method="post" action="/orders/{{ o.id }}/update" class="card">
+<form method="post" action="/orders/{{ o.id }}/update" class="card" id="editForm">
   <label>Nombre cliente<br>
     <input name="cliente_nombre" value="{{ o.cliente_nombre }}" required>
   </label><br><br>
@@ -17,10 +18,22 @@
            value="{{ o.telefono or '' }}">
   </label><br><br>
 
+  <!-- PROMO -->
+  <label>Promoción (opcional)</label>
+  <div class="promo-row">
+    <select id="promoSelect">
+      <option value="">— Selecciona promo —</option>
+    </select>
+    <button type="button" class="btn btn-sm" id="clearPromo">Limpiar</button>
+  </div>
+  <div class="sub">Al elegir una promo, se rellena automáticamente el Detalle y el Monto promo.</div>
+  <br>
+
   <label>Detalle<br>
-    <textarea name="detalle" class="textarea-lg" rows="5" required>{{ o.detalle or '' }}</textarea>
+    <textarea name="detalle" id="detalleField" class="textarea-lg" rows="5" required>{{ o.detalle or '' }}</textarea>
   </label><br><br>
 
+  <!-- SOYA -->
   <fieldset>
     <legend>Soya</legend>
     <div class="soya-wrap">
@@ -38,6 +51,7 @@
     <div class="sub">Deja en blanco o 0 si no corresponde.</div>
   </fieldset>
 
+  <!-- PALITOS -->
   <fieldset>
     <legend>Palitos</legend>
     <label>Pares de palitos (opcional)<br>
@@ -46,6 +60,7 @@
     </label><br><br>
   </fieldset>
 
+  <!-- MODALIDAD -->
   <fieldset>
     <legend>Modalidad</legend>
     <div class="modalidad-group">
@@ -62,11 +77,13 @@
     </div>
   </fieldset><br>
 
+  <!-- DIRECCIÓN (solo despacho) -->
   <div id="direccionBox" style="display:none">
     <label>Dirección<br><input name="direccion" value="{{ o.direccion or '' }}"></label><br><br>
     <label>Comuna<br><input name="comuna" placeholder="ej: Maipú" value="{{ o.comuna or '' }}"></label><br><br>
   </div>
 
+  <!-- PAGO / DESPACHO / TOTAL (oculto) / OBS -->
   <label>Método de pago<br>
     <select name="medio_pago" required>
       <option value="debito_credito" {% if o.medio_pago=='debito_credito' %}selected{% endif %}>Débito/Crédito</option>
@@ -75,13 +92,18 @@
     </select>
   </label><br><br>
 
-  <label>Despacho (CLP)<br>
-    <input name="despacho_clp" type="number" min="0" value="{{ o.despacho_clp or 0 }}">
+  <!-- 👇 Nuevo esquema: mostramos Monto promo + Despacho; ocultamos el Total -->
+  <label>Monto promo (CLP)<br>
+    <input id="promoAmount" type="number" inputmode="numeric"
+           value="">
   </label><br><br>
 
-  <label>Monto total (CLP)<br>
-    <input name="monto_total_clp" type="number" min="0" value="{{ o.monto_total_clp or 0 }}">
+  <label>Despacho (CLP)<br>
+    <input name="despacho_clp" id="despachoField" type="number" min="0" value="{{ o.despacho_clp or 0 }}">
   </label><br><br>
+
+  <!-- Total oculto que se envía al backend -->
+  <input type="hidden" name="monto_total_clp" id="montoField" value="{{ o.monto_total_clp or 0 }}">
 
   <label>Observaciones<br>
     <textarea name="observaciones" class="textarea-lg" rows="3">{{ o.observaciones or '' }}</textarea>
@@ -90,18 +112,5 @@
   <button class="btn" type="submit">Guardar cambios</button>
   <a class="btn btn-sm" href="/">Volver</a>
 </form>
-
-<script>
-  (function(){
-    const radios = document.querySelectorAll('input[name="modalidad"]');
-    const box = document.getElementById('direccionBox');
-    function toggleDir(){
-      const v = [...radios].find(r=>r.checked)?.value;
-      box.style.display = (v === 'despacho') ? '' : 'none';
-    }
-    radios.forEach(r=>r.addEventListener('change', toggleDir));
-    toggleDir();
-  })();
-</script>
 
 {% endblock %}
