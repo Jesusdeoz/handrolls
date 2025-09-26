@@ -1,10 +1,5 @@
 {% extends "base.html" %}
 {% block title %}Nuevo pedido{% endblock %}
-
-{# Si tu base.html NO tiene un bloque para la cabecera, puedes dejar
-   estos <link>/<script> al inicio del contenido (funciona igual).
-   Si SÍ tiene un bloque tipo {% block head %}, muévelos allí. #}
-
 {% block content %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
@@ -16,8 +11,7 @@
   <label>Nombre cliente<br><input name="cliente_nombre" required></label><br><br>
 
   <label>Teléfono<br>
-    <input name="telefono" type="tel" inputmode="numeric" autocomplete="tel"
-           placeholder="+56912345678" pattern="[0-9+ ]*">
+    <input name="telefono" type="tel" inputmode="numeric" autocomplete="tel" placeholder="+56912345678" pattern="[0-9+ ]*">
   </label><br><br>
 
   <!-- PROMO -->
@@ -28,9 +22,7 @@
     </select>
     <button type="button" class="btn btn-sm" id="clearPromo">Limpiar</button>
   </div>
-  <div class="sub">
-    Al elegir una promo, se rellenan automáticamente Detalle y Monto. Luego puedes ajustar si quieres.
-  </div>
+  <div class="sub">Al elegir una promo, se rellenan automáticamente Detalle y Monto. Luego puedes ajustar si quieres.</div>
   <br>
 
   <!-- DETALLE -->
@@ -77,13 +69,17 @@
     <label>Comuna<br><input name="comuna" placeholder="ej: Maipú"></label><br><br>
   </div>
 
-  <!-- PAGO / MONTO / OBS -->
+  <!-- PAGO / DESPACHO / TOTAL / OBS -->
   <label>Método de pago<br>
     <select name="medio_pago" required>
       <option value="debito_credito">Débito/Crédito</option>
       <option value="transferencia">Transferencia</option>
       <option value="efectivo">Efectivo</option>
     </select>
+  </label><br><br>
+
+  <label>Despacho (CLP)<br>
+    <input name="despacho_clp" id="despachoField" type="number" min="0">
   </label><br><br>
 
   <label>Monto total (CLP)<br>
