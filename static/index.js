@@ -12,19 +12,26 @@
 
 // ---------- PROMOS + DESPACHO → TOTAL ----------
 let PROMOS = [];
-let selectedPromoAmount = 0;
+let selectedPromoAmount = 0;   // monto de la promo elegida (0 si no hay)
 
 const promoSelect   = document.getElementById('promoSelect');
 const detalleField  = document.getElementById('detalleField');
-const montoField    = document.getElementById('montoField');
-const despachoField = document.getElementById('despachoField');
+const montoField    = document.getElementById('montoField');     // "Monto total (CLP)"
+const despachoField = document.getElementById('despachoField');  // "Despacho (CLP)"
 const clearBtn      = document.getElementById('clearPromo');
+const createForm    = document.querySelector('form[action="/orders"]');
 
 function toInt(x){ const n = parseInt(x,10); return isNaN(n) ? 0 : n; }
 
+function isPromoSelected(){
+  return !!(promoSelect && promoSelect.value);
+}
+
+// Recalcula y ESCRIBE en el campo "Monto total"
 function recalcTotal(){
   const desp = toInt(despachoField?.value || 0);
-  const total = toInt(selectedPromoAmount) + desp;
+  const base = isPromoSelected() ? selectedPromoAmount : toInt(montoField?.value || 0);
+  const total = base + desp;
   if (montoField) montoField.value = total || '';
 }
 
@@ -44,10 +51,15 @@ async function loadPromos() {
 
 function applySelectedPromo() {
   const p = PROMOS.find(x => String(x.promo_nro) === String(promoSelect.value));
-  if (!p) { selectedPromoAmount = 0; recalcTotal(); return; }
+  if (!p) {
+    selectedPromoAmount = 0;
+    // No hay promo: no tocamos detalle; dejamos que el usuario edite el total manualmente,
+    // pero cuando cambie el despacho o envíe el form, sumaremos despacho.
+    return;
+  }
   detalleField.value = p.detalle || '';
   selectedPromoAmount = toInt(p.monto);
-  recalcTotal();
+  recalcTotal(); // refleja promo + despacho
 }
 
 promoSelect?.addEventListener('change', applySelectedPromo);
@@ -55,13 +67,25 @@ clearBtn?.addEventListener('click', () => {
   if (!promoSelect) return;
   promoSelect.value = '';
   selectedPromoAmount = 0;
-  recalcTotal();
+  // tras limpiar promo no forzamos total; el usuario podrá dejar su número
 });
+
 despachoField?.addEventListener('input', recalcTotal);
 
+// 🔒 Al ENVIAR el formulario, pisamos SIEMPRE el total con (promo o monto actual) + despacho.
+// Así garantizamos que al backend llegue la suma correcta.
+createForm?.addEventListener('submit', (ev) => {
+  const desp = toInt(despachoField?.value || 0);
+  const base = isPromoSelected() ? selectedPromoAmount : toInt(montoField?.value || 0);
+  const total = base + desp;
+  if (montoField) montoField.value = total;
+});
+
+// Carga inicial de promos
 loadPromos();
 
-// ---------- LISTADO (tabla) ----------
+
+// ---------- LISTADO (tabla del mostrador) ----------
 const filterSelect = document.getElementById('stateFilter');
 let FILTER = filterSelect ? filterSelect.value : 'pending';
 
@@ -145,7 +169,6 @@ function row(p) {
 
   const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
-  // Detalle + palitos + soya + obs (con saltos de línea)
   const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
     ? `<div class="sub">Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
@@ -157,13 +180,11 @@ function row(p) {
 
   const det = detBlock + palitosBlock + soyaBlock + obsBlock + despachoInfo;
 
-  // Pago (medio + badge)
   const payBadge = p.pagado
     ? `<span class="badge badge-pay-green">Pagado</span>`
     : `<span class="badge badge-pay-red">Pendiente de pago</span>`;
   const pagoCol = `${esc(pagoLabel(p.medio_pago))}<div class="sub" style="margin-top:4px">${payBadge}</div>`;
 
-  // Acciones
   const payBtn = p.pagado
     ? `<button class="btn btn-sm" onclick="setPaid(${p.id}, false)">Pendiente de Pago</button>`
     : `<button class="btn btn-sm" onclick="setPaid(${p.id}, true)">Pagado</button>`;
