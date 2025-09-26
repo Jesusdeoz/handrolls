@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 from pathlib import Path
 import traceback
 
-# -------------------- APP --------------------
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 # -------------------- DB CONFIG --------------------
@@ -15,7 +14,6 @@ if not DATABASE_URL:
     raise RuntimeError(
         "DATABASE_URL no está definida. En Vercel usa la URI de Connection Pooling (pgBouncer, puerto 6543) con sslmode=require."
     )
-# fuerza ssl si faltara
 if DATABASE_URL.startswith("postgres") and "sslmode=" not in DATABASE_URL:
     DATABASE_URL += ("&" if "?" in DATABASE_URL else "?") + "sslmode=require"
 
@@ -48,7 +46,6 @@ def close_db(_exc):
     if db is not None:
         db.close()
 
-# -------------------- SOYA HELPERS --------------------
 def _to_int(x):
     try:
         v = int(x)
@@ -59,7 +56,6 @@ def _to_int(x):
 def build_soya_string(soya_normal_qty, soya_dulce_qty):
     n = _to_int(soya_normal_qty)
     d = _to_int(soya_dulce_qty)
-    # devuelve None si no hay nada (para dejar la columna vacía)
     return None if (n == 0 and d == 0) else f"normal:{n};dulce:{d}"
 
 def parse_soya_string(s):
@@ -77,7 +73,6 @@ def parse_soya_string(s):
 # -------------------- DEBUG / DIAG --------------------
 @app.errorhandler(Exception)
 def _handle_any_error(e):
-    # En Vercel puedes definir APP_DEBUG=1 (en Preview) para ver el stack
     if os.getenv("APP_DEBUG") == "1":
         tb = traceback.format_exc()
         print(tb)
@@ -107,8 +102,7 @@ def _diag():
     if info["orders_table_exists"]:
         cnt = fetch_one("select count(*) as n from public.orders")
         info["orders_count"] = cnt["n"]
-    preg = fetch_one("select to_regclass('public.promos') as reg")
-    info["promos_table_exists"] = bool(preg and preg["reg"])
+    info["edit_template_found"] = "edit.html" in info["templates_list"]
     return jsonify(info)
 
 # -------------------- RUTAS HTML --------------------
@@ -120,37 +114,61 @@ def home():
 def kitchen():
     return render_template("kitchen.html")
 
-# -------------------- CREAR PEDIDO (form) --------------------
+# -------------------- PROMOS --------------------
+@app.route("/api/promos")
+def api_promos():
+    rows = fetch_all("select promo_nro, detalle, monto from public.promos order by promo_nro asc")
+    return jsonify(rows)
+
+@app.route("/promos", methods=["POST"])
+def upsert_promo():
+    nro = (request.form.get("promo_nro") or "").strip()
+    det = (request.form.get("promo_detalle") or "").strip()
+    monto = int(request.form.get("promo_monto") or 0)
+    if not nro or not det:
+        return redirect("/")
+    exec_sql("""
+        insert into public.promos(promo_nro, detalle, monto)
+        values (%s,%s,%s)
+        on conflict (promo_nro) do update set
+          detalle = excluded.detalle,
+          monto   = excluded.monto
+    """, (nro, det, monto))
+    return redirect("/")
+
+# -------------------- CREAR PEDIDO --------------------
 @app.route("/orders", methods=["POST"])
 def create_order():
     cliente = request.form["cliente_nombre"].strip()
     telefono = request.form.get("telefono")
     detalle = request.form["detalle"].strip()
-
-    # soya cantidades -> string "normal:x;dulce:y" o None
     soya_normal_qty = request.form.get("soya_normal_qty")
     soya_dulce_qty  = request.form.get("soya_dulce_qty")
     salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
-
-    # pares de palitos (opcional)
-    palitos_pares = int(request.form.get("palitos_pares") or 0)
 
     modalidad = request.form["modalidad"]
     medio_pago = request.form["medio_pago"]
     direccion = request.form.get("direccion") if modalidad == "despacho" else None
     comuna = request.form.get("comuna") if modalidad == "despacho" else None
-    monto = int(request.form.get("monto_total_clp") or 0)
+
+    # NUEVO: despacho_clp y total
+    despacho_clp = int(request.form.get("despacho_clp") or 0)
+    monto_total  = int(request.form.get("monto_total_clp") or 0)
+
     observaciones = request.form.get("observaciones")
+    palitos_pares = int(request.form.get("palitos_pares") or 0)
 
     exec_sql("""
         insert into public.orders
-        (cliente_nombre, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad, direccion, comuna, monto_total_clp, estado, observaciones, pagado)
-        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'nuevo',%s,false)
-    """, (cliente, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad, direccion, comuna, monto, observaciones))
+        (cliente_nombre, telefono, detalle, salsas, medio_pago, modalidad, direccion, comuna,
+         monto_total_clp, despacho_clp, estado, observaciones, palitos_pares)
+        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'nuevo',%s,%s)
+    """, (cliente, telefono, detalle, salsas, medio_pago, modalidad, direccion, comuna,
+          monto_total, despacho_clp, observaciones, palitos_pares))
 
     return redirect("/kitchen")
 
-# -------------------- API: LISTAR / ACTUALIZAR ESTADO (ORDERS) --------------------
+# -------------------- API: LISTAR / ACTUALIZAR ESTADO --------------------
 @app.route("/api/orders")
 def list_orders():
     rows = fetch_all("select * from public.orders order by hora_creacion asc")
@@ -164,12 +182,11 @@ NEXT = {
 @app.route("/api/orders/<int:oid>", methods=["PATCH"])
 def update_order(oid):
     data = request.get_json(force=True)
-    action = data.get("action")  # "next"|"cancel"|"despachado"|"entregado"|"retirado"|"set_paid"
+    action = data.get("action")
     row = fetch_one("select id, estado from public.orders where id = %s", (oid,))
     if not row:
         return jsonify({"error": "not found"}), 404
 
-    # toggle/set paid
     if action == "set_paid":
         paid = bool(data.get("paid"))
         exec_sql("update public.orders set pagado = %s where id = %s", (paid, oid))
@@ -189,7 +206,7 @@ def update_order(oid):
     exec_sql("update public.orders set estado = %s where id = %s", (new_estado, oid))
     return jsonify({"ok": True, "estado": new_estado})
 
-# -------------------- EDITAR PEDIDO (form) --------------------
+# -------------------- EDITAR PEDIDO --------------------
 @app.route("/orders/<int:oid>/edit")
 def edit_order(oid):
     o = fetch_one("select * from public.orders where id = %s", (oid,))
@@ -201,58 +218,32 @@ def edit_order(oid):
     o2["soya_dulce_qty"]  = d
     return render_template("edit.html", o=o2)
 
-# === PROMOS API ===
-@app.route("/api/promos")
-def api_promos():
-    rows = fetch_all("select promo_nro, detalle, monto from public.promos order by promo_nro asc")
-    return jsonify(rows)
-
-# crear/actualizar promo desde el formulario de la sección "Promos" del index
-@app.route("/promos", methods=["POST"])
-def upsert_promo():
-    nro = (request.form.get("promo_nro") or "").strip()
-    det = (request.form.get("promo_detalle") or "").strip()
-    monto = int(request.form.get("promo_monto") or 0)
-    if not nro or not det:
-        return redirect("/")  # o 400
-    exec_sql("""
-        insert into public.promos(promo_nro, detalle, monto)
-        values (%s,%s,%s)
-        on conflict (promo_nro) do update set
-          detalle = excluded.detalle,
-          monto   = excluded.monto
-    """, (nro, det, monto))
-    return redirect("/")
-
-
 @app.route("/orders/<int:oid>/update", methods=["POST"], endpoint="orders_update_form")
 def update_order_form(oid):
     cliente = request.form["cliente_nombre"].strip()
     telefono = request.form.get("telefono")
     detalle = request.form["detalle"].strip()
-
     soya_normal_qty = request.form.get("soya_normal_qty")
     soya_dulce_qty  = request.form.get("soya_dulce_qty")
     salsas = build_soya_string(soya_normal_qty, soya_dulce_qty)
-
-    palitos_pares = int(request.form.get("palitos_pares") or 0)
 
     modalidad = request.form["modalidad"]
     medio_pago = request.form["medio_pago"]
     direccion = request.form.get("direccion") if modalidad == "despacho" else None
     comuna = request.form.get("comuna") if modalidad == "despacho" else None
-    monto = int(request.form.get("monto_total_clp") or 0)
+
+    despacho_clp = int(request.form.get("despacho_clp") or 0)   # NUEVO
+    monto        = int(request.form.get("monto_total_clp") or 0)
     observaciones = request.form.get("observaciones")
+    palitos_pares = int(request.form.get("palitos_pares") or 0)
 
     exec_sql("""
       update public.orders
          set cliente_nombre=%s, telefono=%s, detalle=%s, salsas=%s,
-             palitos_pares=%s,
              medio_pago=%s, modalidad=%s, direccion=%s, comuna=%s,
-             monto_total_clp=%s, observaciones=%s
+             monto_total_clp=%s, despacho_clp=%s, observaciones=%s, palitos_pares=%s
        where id=%s
-    """, (cliente, telefono, detalle, salsas, palitos_pares, medio_pago, modalidad,
-          direccion, comuna, monto, observaciones, oid))
+    """, (cliente, telefono, detalle, salsas, medio_pago, modalidad,
+          direccion, comuna, monto, despacho_clp, observaciones, palitos_pares, oid))
 
     return redirect("/")
-
