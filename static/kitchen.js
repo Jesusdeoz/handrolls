@@ -1,7 +1,5 @@
-// ----- Config -----
-const LATE_MINUTES = 60; // umbral para marcar la hora en rojo
+const LATE_MINUTES = 60; // umbral para marcar en rojo
 
-// ----- Utils -----
 async function fetchAll() {
   const r = await fetch(`/api/orders`, { cache: 'no-store' });
   return await r.json();
@@ -22,7 +20,7 @@ function esc(s) {
 
 function pagoLabel(v) {
   switch ((v || '').toLowerCase()) {
-    case 'efectivo': return 'Efectivo';    
+    case 'efectivo': return 'Efectivo';
     case 'transferencia': return 'Transferencia';
     default: return v || '-';
   }
@@ -42,10 +40,10 @@ function formatSoya(s) {
   return parts.join(", ");
 }
 
-// Kitchen solo muestra pendientes (no entregados/retirados/despachados)
+// Kitchen solo muestra pendientes (NO entregados/retirados/despachados)
 function isDelivered(p) {
   const st = (p.estado || '').toLowerCase();
-  return ['despachado','entregado','retirado'].includes(st);
+  return ['despachado', 'entregado', 'retirado'].includes(st);
 }
 
 // ¿Ya pasó una hora desde la creación?
@@ -56,59 +54,72 @@ function isLate(ts) {
   return mins >= LATE_MINUTES;
 }
 
-// ----- Render de filas -----
-function row(p) {
-  const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
+function modalidadBadge(p) {
+  const m = (p.modalidad || '').toLowerCase();
+  if (m === 'despacho') return `<span class="chip chip-desp">Despacho</span>`;
+  return `<span class="chip chip-ret">Retiro</span>`;
+}
 
-  // Hora con rectángulo; rojo si tarde
+function direccionBlock(p) {
+  const m = (p.modalidad || '').toLowerCase();
+  if (m !== 'despacho') return '';
+  const dir = [p.direccion, p.comuna].filter(Boolean).join(', ');
+  if (!dir) return '';
+  return `<div class="sub strong wrap">📍 ${esc(dir)}</div>`;
+}
+
+function row(p) {
+  const total = Number(p.monto_total_clp || 0)
+    .toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
+
   const hora = hhmm(p.hora_creacion);
   const late = isLate(p.hora_creacion);
   const horaHtml = `<span class="time-badge${late ? ' time-badge-late' : ''}">${hora}</span>`;
 
-  // Teléfono (debajo del nombre)
-  const tel  = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
+  const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
-  // Bloques ordenados (cada uno en su línea):
-  const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
+  const detMain = p.detalle ? `<div class="wrap">${esc(p.detalle)}</div>` : '';
+
+  const soyaTxt = formatSoya(p.salsas);
+  const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : '';
 
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
-    ? `<div class="sub">Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
+    ? `<div class="sub" style="margin-top:6px">Pares de palitos: ${Number(p.palitos_pares)}</div>` : '';
 
-  const soyaTxt   = formatSoya(p.salsas);
-  const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
-
-  const obsBlock  = p.observaciones
-    ? `<div class="sub"><span class="obs">Obs: ${esc(p.observaciones)}</span></div>`
-    : "";
-
-  const detailHtml = detBlock + palitosBlock + soyaBlock + obsBlock;
-
-  // Pago: medio + badge de estado de pago
-  const payBadge = p.pagado
-    ? `<span class="badge badge-pay-green">Pagado</span>`
-    : `<span class="badge badge-pay-red">Pendiente de pago</span>`;
-  const pagoCol = `${esc(pagoLabel(p.medio_pago))}<div class="sub" style="margin-top:4px">${payBadge}</div>`;
+  const obsBlock = p.observaciones
+    ? `<div class="obs-block">Obs: ${esc(p.observaciones)}</div>`
+    : '';
 
   return `
     <tr class="row-green">
-      <td>#${p.id}</td>
-      <td>${horaHtml}</td>
-      <td>${esc(p.cliente_nombre)} ${tel} ${detailHtml}</td>
-      <td><span class="badge badge-green">Pendiente</span></td>
-      <td>${pagoCol}</td>
-      <td class="right">${total}</td>
+      <td class="id">#${p.id}</td>
+      <td class="hora">${horaHtml}</td>
+      <td class="info">
+        <div class="topline">
+          <span class="cliente">${esc(p.cliente_nombre)}</span>
+          ${modalidadBadge(p)}
+        </div>
+        ${tel}
+        ${direccionBlock(p)}
+        ${detMain}
+        ${soyaBlock}
+        ${palitosBlock}
+        ${obsBlock}
+      </td>
+      <td class="estado"><span class="badge badge-green">Pendiente</span></td>
+      <td class="pago">${esc(pagoLabel(p.medio_pago))}</td>
+      <td class="right total">${total}</td>
     </tr>
   `;
 }
 
-// ----- Ciclo de pintado -----
 async function render() {
   try {
     const all = await fetchAll();
-    const pending = all.filter(p => !isDelivered(p)); // SOLO pendientes
+    const pending = all.filter(p => !isDelivered(p)); // SOLO PENDIENTES
 
     const tbody = document.getElementById('orders_tbody');
-    const empty = document.getElementById('empty'); // opcional en kitchen.html
+    const empty = document.getElementById('empty'); // si lo usas en kitchen.html
 
     tbody.innerHTML = pending.map(row).join('');
     if (empty) empty.style.display = pending.length ? 'none' : 'block';
@@ -119,6 +130,3 @@ async function render() {
 
 render();
 setInterval(render, 4000);
-
-
-
