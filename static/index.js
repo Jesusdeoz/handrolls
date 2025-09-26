@@ -10,29 +10,32 @@
   toggleDir();
 })();
 
-// ---------- PROMOS + DESPACHO → TOTAL ----------
+// ---------- PROMOS + DESPACHO → TOTAL (Total oculto en form) ----------
 let PROMOS = [];
 let selectedPromoAmount = 0;   // monto de la promo elegida (0 si no hay)
 
-const promoSelect   = document.getElementById('promoSelect');
-const detalleField  = document.getElementById('detalleField');
-const montoField    = document.getElementById('montoField');     // "Monto total (CLP)"
-const despachoField = document.getElementById('despachoField');  // "Despacho (CLP)"
-const clearBtn      = document.getElementById('clearPromo');
-const createForm    = document.querySelector('form[action="/orders"]');
+const promoSelect    = document.getElementById('promoSelect');
+const detalleField   = document.getElementById('detalleField');
+const promoAmountEl  = document.getElementById('promoAmount');   // 👈 nuevo visible (readonly)
+const despachoField  = document.getElementById('despachoField'); // 👈 visible
+const montoField     = document.getElementById('montoField');    // 👈 hidden (se envía)
+const clearBtn       = document.getElementById('clearPromo');
+const createForm     = document.querySelector('form[action="/orders"]');
 
 function toInt(x){ const n = parseInt(x,10); return isNaN(n) ? 0 : n; }
+function isPromoSelected(){ return !!(promoSelect && promoSelect.value); }
 
-function isPromoSelected(){
-  return !!(promoSelect && promoSelect.value);
+// Recalcula el TOTAL y lo guarda en el input hidden
+function setHiddenTotal(total){
+  if (montoField) montoField.value = total;
 }
 
-// Recalcula y ESCRIBE en el campo "Monto total"
+// Recalcula el hidden total sin mostrarlo en la UI
 function recalcTotal(){
   const desp = toInt(despachoField?.value || 0);
-  const base = isPromoSelected() ? selectedPromoAmount : toInt(montoField?.value || 0);
+  const base = isPromoSelected() ? selectedPromoAmount : 0; // si no hay promo, base = 0 (tú manejas el monto final con despacho)
   const total = base + desp;
-  if (montoField) montoField.value = total || '';
+  setHiddenTotal(total);
 }
 
 async function loadPromos() {
@@ -53,13 +56,14 @@ function applySelectedPromo() {
   const p = PROMOS.find(x => String(x.promo_nro) === String(promoSelect.value));
   if (!p) {
     selectedPromoAmount = 0;
-    // No hay promo: no tocamos detalle; dejamos que el usuario edite el total manualmente,
-    // pero cuando cambie el despacho o envíe el form, sumaremos despacho.
+    if (promoAmountEl) promoAmountEl.value = '';
+    recalcTotal();
     return;
   }
   detalleField.value = p.detalle || '';
   selectedPromoAmount = toInt(p.monto);
-  recalcTotal(); // refleja promo + despacho
+  if (promoAmountEl) promoAmountEl.value = selectedPromoAmount; // 👈 muestra monto promo
+  recalcTotal();
 }
 
 promoSelect?.addEventListener('change', applySelectedPromo);
@@ -67,18 +71,17 @@ clearBtn?.addEventListener('click', () => {
   if (!promoSelect) return;
   promoSelect.value = '';
   selectedPromoAmount = 0;
-  // tras limpiar promo no forzamos total; el usuario podrá dejar su número
+  if (promoAmountEl) promoAmountEl.value = '';
+  recalcTotal();
 });
-
 despachoField?.addEventListener('input', recalcTotal);
 
-// 🔒 Al ENVIAR el formulario, pisamos SIEMPRE el total con (promo o monto actual) + despacho.
-// Así garantizamos que al backend llegue la suma correcta.
+// Al ENVIAR el formulario, aseguramos que el hidden total tenga promo+despacho
 createForm?.addEventListener('submit', (ev) => {
   const desp = toInt(despachoField?.value || 0);
-  const base = isPromoSelected() ? selectedPromoAmount : toInt(montoField?.value || 0);
+  const base = isPromoSelected() ? selectedPromoAmount : 0;
   const total = base + desp;
-  if (montoField) montoField.value = total;
+  setHiddenTotal(total);
 });
 
 // Carga inicial de promos
@@ -166,19 +169,16 @@ function row(p) {
 
   const total = Number(p.monto_total_clp || 0).toLocaleString('es-CL', { style:'currency', currency:'CLP' });
   const hora = hhmm(p.hora_creacion);
-
   const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
+  // Detalle + palitos + soya + obs (sin mostrar despacho aquí)
   const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
     ? `<div class="sub">Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
   const soyaTxt   = formatSoya(p.salsas);
   const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
   const obsBlock  = p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : "";
-  const despachoInfo = (p.despacho_clp && Number(p.despacho_clp) > 0)
-    ? `<div class="sub">Despacho: ${Number(p.despacho_clp).toLocaleString('es-CL',{style:'currency',currency:'CLP'})}</div>` : "";
-
-  const det = detBlock + palitosBlock + soyaBlock + obsBlock + despachoInfo;
+  const det = detBlock + palitosBlock + soyaBlock + obsBlock;
 
   const payBadge = p.pagado
     ? `<span class="badge badge-pay-green">Pagado</span>`
