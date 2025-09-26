@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block title %}Editar pedido #{{ o.id }}{% endblock %}
-
 {% block content %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
@@ -30,7 +29,6 @@
                value="{{ o.soya_normal_qty or 0 }}">
         <span>Soya normal</span>
       </label>
-
       <label class="soya-row">
         <input type="number" name="soya_dulce_qty" min="0" placeholder="0"
                value="{{ o.soya_dulce_qty or 0 }}">
@@ -77,6 +75,10 @@
     </select>
   </label><br><br>
 
+  <label>Despacho (CLP)<br>
+    <input name="despacho_clp" type="number" min="0" value="{{ o.despacho_clp or 0 }}">
+  </label><br><br>
+
   <label>Monto total (CLP)<br>
     <input name="monto_total_clp" type="number" min="0" value="{{ o.monto_total_clp or 0 }}">
   </label><br><br>
@@ -90,7 +92,6 @@
 </form>
 
 <script>
-  // Mostrar/ocultar dirección según modalidad
   (function(){
     const radios = document.querySelectorAll('input[name="modalidad"]');
     const box = document.getElementById('direccionBox');
