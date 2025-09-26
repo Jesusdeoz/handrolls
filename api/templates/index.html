@@ -77,18 +77,23 @@
       <option value="efectivo">Efectivo</option>
     </select>
   </label><br><br>
-
+  
+  <!-- 👇 NUEVO: monto promo visible (solo lectura) -->
+  <label>Monto promo (CLP)<br>
+    <input id="promoAmount" type="number" inputmode="numeric" readonly>
+  </label><br><br>
+  
   <label>Despacho (CLP)<br>
     <input name="despacho_clp" id="despachoField" type="number" min="0">
   </label><br><br>
-
-  <label>Monto total (CLP)<br>
-    <input name="monto_total_clp" id="montoField" type="number" min="0">
-  </label><br><br>
-
+  
+  <!-- 👇 Ocultamos el total en el formulario, pero lo seguimos enviando al backend -->
+  <input type="hidden" name="monto_total_clp" id="montoField">
+  
   <label>Observaciones<br>
     <textarea name="observaciones" class="textarea-lg" rows="3" placeholder="sin cebollín, alérgenos, timbre, etc."></textarea>
   </label><br><br>
+
 
   <button class="btn" type="submit">Crear pedido</button>
 </form>
@@ -149,3 +154,4 @@
 </form>
 
 {% endblock %}
+
