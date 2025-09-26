@@ -2,62 +2,14 @@
 {% block title %}Cocina{% endblock %}
 {% block content %}
 
+<!-- Estilos y JS específicos de Kitchen -->
+<link rel="stylesheet" href="{{ url_for('static', filename='kitchen.css') }}">
+<script defer src="{{ url_for('static', filename='kitchen.js') }}"></script>
+
 <h2 class="k-title">Pedidos pendientes (Cocina)</h2>
 <p class="sub k-sub">Esta vista solo muestra los pedidos pendientes y se actualiza automáticamente.</p>
 
-<style>
-  /* ===== Escala general de la vista Kitchen ===== */
-  .kitchen-scale { font-size: 18px; line-height: 1.4; }
-  .k-title { font-size: 28px; margin: 0 0 4px 0; }
-  .k-sub { font-size: 14px; }
-
-  /* ===== Tabla ===== */
-  .table { width:100%; border-collapse:collapse; }
-  .table thead th {
-    text-align:left; font-weight:700; padding:14px;
-    border-bottom:1px solid #e5e7eb; color:#111827; font-size:18px;
-  }
-  .table tbody td {
-    padding:16px 12px; border-bottom:1px solid #f1f5f9; vertical-align:top;
-  }
-  .right { text-align:right; }
-  .sub { color:#6b7280; font-size:0.95em; }
-  .wrap { white-space: pre-wrap; word-break: break-word; } /* preserva saltos */
-  .row-green { border-left:4px solid #22c55e; }
-  .muted { color:#6b7280; padding:12px; }
-
-  /* ===== Badges ===== */
-  .badge { display:inline-block; padding:6px 12px; border-radius:999px; font-size:0.95em; font-weight:700; }
-  .badge-green { background:#dcfce7; color:#166534; }
-  .badge-pay-green { background:#dcfce7; color:#166534; }
-  .badge-pay-red   { background:#fee2e2; color:#991b1b; }
-
-  /* ===== Hora con rectángulo ===== */
-  .time-badge{
-    display:inline-block; padding:6px 12px; border-radius:10px;
-    border:1px solid #e5e7eb; font-weight:700; font-size:1em;
-  }
-  .time-badge-late{
-    background:#fee2e2; color:#991b1b; border-color:#fca5a5;
-  }
-
-  /* Observación destacada */
-  .obs{
-    font-size: 1.2em;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-  }
-
-  /* En pantallas chicas sube un poquito más el tamaño */
-  @media (max-width: 768px){
-    .kitchen-scale { font-size: 20px; }
-    .k-title { font-size: 26px; }
-    .k-sub { font-size: 15px; }
-    .table thead th { font-size: 20px; }
-  }
-</style>
-
-<div class="card kitchen-scale">
+<div class="card kitchen">
   <table class="table">
     <thead>
       <tr>
@@ -71,8 +23,8 @@
     </thead>
     <tbody id="orders_tbody"></tbody>
   </table>
+
   <div id="empty" class="muted" style="display:none;">No hay pedidos pendientes.</div>
 </div>
 
-<script src="{{ url_for('static', filename='kitchen.js') }}"></script>
 {% endblock %}
