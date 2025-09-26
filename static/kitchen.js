@@ -22,8 +22,7 @@ function esc(s) {
 
 function pagoLabel(v) {
   switch ((v || '').toLowerCase()) {
-    case 'efectivo': return 'Efectivo';
-    case 'debito_credito': return 'Débito/Crédito';
+    case 'efectivo': return 'Efectivo';    
     case 'transferencia': return 'Transferencia';
     default: return v || '-';
   }
@@ -120,5 +119,6 @@ async function render() {
 
 render();
 setInterval(render, 4000);
+
 
 
