@@ -12,30 +12,25 @@
 
 // ---------- PROMOS + DESPACHO → TOTAL (Total oculto en form) ----------
 let PROMOS = [];
-let selectedPromoAmount = 0;   // monto de la promo elegida (0 si no hay)
 
 const promoSelect    = document.getElementById('promoSelect');
 const detalleField   = document.getElementById('detalleField');
-const promoAmountEl  = document.getElementById('promoAmount');   // 👈 nuevo visible (readonly)
-const despachoField  = document.getElementById('despachoField'); // 👈 visible
-const montoField     = document.getElementById('montoField');    // 👈 hidden (se envía)
+const promoAmountEl  = document.getElementById('promoAmount');   // EDITABLE
+const despachoField  = document.getElementById('despachoField');
+const montoField     = document.getElementById('montoField');    // hidden total
 const clearBtn       = document.getElementById('clearPromo');
 const createForm     = document.querySelector('form[action="/orders"]');
 
 function toInt(x){ const n = parseInt(x,10); return isNaN(n) ? 0 : n; }
-function isPromoSelected(){ return !!(promoSelect && promoSelect.value); }
 
-// Recalcula el TOTAL y lo guarda en el input hidden
 function setHiddenTotal(total){
   if (montoField) montoField.value = total;
 }
 
-// Recalcula el hidden total sin mostrarlo en la UI
 function recalcTotal(){
-  const desp = toInt(despachoField?.value || 0);
-  const base = isPromoSelected() ? selectedPromoAmount : 0; // si no hay promo, base = 0 (tú manejas el monto final con despacho)
-  const total = base + desp;
-  setHiddenTotal(total);
+  const promo = toInt(promoAmountEl?.value || 0);   // <- SIEMPRE usa el input
+  const desp  = toInt(despachoField?.value || 0);
+  setHiddenTotal(promo + desp);
 }
 
 async function loadPromos() {
@@ -54,15 +49,10 @@ async function loadPromos() {
 
 function applySelectedPromo() {
   const p = PROMOS.find(x => String(x.promo_nro) === String(promoSelect.value));
-  if (!p) {
-    selectedPromoAmount = 0;
-    if (promoAmountEl) promoAmountEl.value = '';
-    recalcTotal();
-    return;
-  }
-  detalleField.value = p.detalle || '';
-  selectedPromoAmount = toInt(p.monto);
-  if (promoAmountEl) promoAmountEl.value = selectedPromoAmount; // 👈 muestra monto promo
+  if (!p) return;
+  // Autocompleta, pero deja editable
+  if (detalleField)   detalleField.value   = p.detalle || '';
+  if (promoAmountEl)  promoAmountEl.value  = toInt(p.monto) || 0;
   recalcTotal();
 }
 
@@ -70,22 +60,20 @@ promoSelect?.addEventListener('change', applySelectedPromo);
 clearBtn?.addEventListener('click', () => {
   if (!promoSelect) return;
   promoSelect.value = '';
-  selectedPromoAmount = 0;
-  if (promoAmountEl) promoAmountEl.value = '';
-  recalcTotal();
+  // No tocamos el monto promo: si el usuario lo escribió a mano, se respeta
 });
+
+promoAmountEl?.addEventListener('input', recalcTotal);
 despachoField?.addEventListener('input', recalcTotal);
 
-// Al ENVIAR el formulario, aseguramos que el hidden total tenga promo+despacho
-createForm?.addEventListener('submit', (ev) => {
-  const desp = toInt(despachoField?.value || 0);
-  const base = isPromoSelected() ? selectedPromoAmount : 0;
-  const total = base + desp;
-  setHiddenTotal(total);
+// Al enviar, garantizamos total = montoPromo(input) + despacho
+createForm?.addEventListener('submit', () => {
+  recalcTotal();
 });
 
-// Carga inicial de promos
+// Carga inicial + primer cálculo
 loadPromos();
+recalcTotal();
 
 
 // ---------- LISTADO (tabla del mostrador) ----------
@@ -117,7 +105,7 @@ function esc(s) {
 
 function pagoLabel(v) {
   switch ((v || '').toLowerCase()) {
-    case 'efectivo': return 'Efectivo';    
+    case 'efectivo': return 'Efectivo';
     case 'transferencia': return 'Transferencia';
     default: return v || '-';
   }
@@ -160,6 +148,20 @@ function formatSoya(s) {
   return parts.join(", ");
 }
 
+/* ======= NUEVO: Modalidad (chip) y Dirección en pedidos de despacho ======= */
+function modalidadBadge(p) {
+  const m = (p.modalidad || '').toLowerCase();
+  if (m === 'despacho') return `<span class="chip chip-desp">Despacho</span>`;
+  return `<span class="chip chip-ret">Retiro</span>`;
+}
+function direccionBlock(p) {
+  const m = (p.modalidad || '').toLowerCase();
+  if (m !== 'despacho') return '';
+  const dir = [p.direccion, p.comuna].filter(Boolean).join(', ');
+  if (!dir) return '';
+  return `<div class="sub strong wrap">📍 ${esc(dir)}</div>`;
+}
+
 function row(p) {
   const delivered = isDelivered(p);
   const estadoLabel = delivered ? 'Entregado' : 'Pendiente';
@@ -170,14 +172,24 @@ function row(p) {
   const hora = hhmm(p.hora_creacion);
   const tel = p.telefono ? `<div class="sub">${esc(p.telefono)}</div>` : '';
 
-  // Detalle + palitos + soya + obs (sin mostrar despacho aquí)
+  // Primera línea: Cliente + chip modalidad
+  const topline = `
+    <div class="topline">
+      <span class="cliente">${esc(p.cliente_nombre)}</span>
+      ${modalidadBadge(p)}
+    </div>
+  `;
+
+  // Detalle + palitos + soya + obs (no mostramos desglose de despacho aquí)
   const detBlock  = p.detalle ? `<div class="sub wrap">${esc(p.detalle)}</div>` : "";
   const palitosBlock = (p.palitos_pares && Number(p.palitos_pares) > 0)
     ? `<div class="sub">Pares de palitos: ${Number(p.palitos_pares)}</div>` : "";
   const soyaTxt   = formatSoya(p.salsas);
   const soyaBlock = soyaTxt ? `<div class="sub" style="margin-top:6px">Soya: ${esc(soyaTxt)}</div>` : "";
   const obsBlock  = p.observaciones ? `<div class="sub">Obs: ${esc(p.observaciones)}</div>` : "";
-  const det = detBlock + palitosBlock + soyaBlock + obsBlock;
+  const address   = direccionBlock(p);
+
+  const det = topline + tel + address + detBlock + palitosBlock + soyaBlock + obsBlock;
 
   const payBadge = p.pagado
     ? `<span class="badge badge-pay-green">Pagado</span>`
@@ -198,7 +210,7 @@ function row(p) {
     <tr class="${rowCls}">
       <td>#${p.id}</td>
       <td>${hora}</td>
-      <td>${esc(p.cliente_nombre)} ${tel} ${det}</td>
+      <td>${det}</td>
       <td><span class="badge ${badge}">${estadoLabel}</span></td>
       <td>${pagoCol}</td>
       <td class="right">${total}</td>
