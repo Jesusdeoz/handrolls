@@ -60,3 +60,15 @@ input[type="radio"], input[type="checkbox"]{
   .soya-row{ width:100%; }
   .soya-row input[type="number"]{ width:100%; max-width: 140px; }
 }
+
+/* Chips de modalidad (reutilizables con Kitchen) */
+.topline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.cliente { font-weight:700; }
+
+.chip { display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; }
+.chip-desp { background:#e0f2fe; color:#075985; }  /* azul para despacho */
+.chip-ret  { background:#ede9fe; color:#5b21b6; }  /* violeta para retiro */
+
+.strong { font-weight:600; }
+.wrap   { white-space: pre-wrap; word-break: break-word; }
+
