@@ -52,9 +52,11 @@ function applySelectedPromo() {
   if (!p) return;
   // Autocompleta, pero deja editable
   if (detalleField)   detalleField.value   = p.detalle || '';
-  if (promoAmountEl)  promoAmountEl.value  = toInt(p.monto) || 0;
-  recalcTotal();
-}
+  if (promoAmountEl) {
+    promoAmountEl.removeAttribute('readonly');
+    promoAmountEl.disabled = false;
+    promoAmountEl.style.pointerEvents = 'auto';
+  }
 
 promoSelect?.addEventListener('change', applySelectedPromo);
 clearBtn?.addEventListener('click', () => {
