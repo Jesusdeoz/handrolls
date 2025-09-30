@@ -48,15 +48,13 @@ async function loadPromos() {
 }
 
 function applySelectedPromo() {
-  const p = PROMOS.find(x => String(x.promo_nro) === String(promoSelect.value));
-  if (!p) return;
-  // Autocompleta, pero deja editable
-  if (detalleField)   detalleField.value   = p.detalle || '';
-  if (promoAmountEl) {
-    promoAmountEl.removeAttribute('readonly');
-    promoAmountEl.disabled = false;
-    promoAmountEl.style.pointerEvents = 'auto';
+    const p = PROMOS.find(x => String(x.promo_nro) === String(promoSelect.value));
+    if (!p) return;
+    if (detalleField)  detalleField.value  = p.detalle || '';
+    if (promoAmountEl) promoAmountEl.value = parseInt(p.monto, 10) || 0; // editable después
+    recalcTotal();
   }
+
 
 promoSelect?.addEventListener('change', applySelectedPromo);
 clearBtn?.addEventListener('click', () => {
