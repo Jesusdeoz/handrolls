@@ -77,10 +77,11 @@
     </select>
   </label><br><br>
   
-  <!-- 👇 NUEVO: monto promo visible (solo lectura) -->
+  <!-- 👇 NUEVO: monto promo visible -->
   <label>Monto promo (CLP)<br>
-    <input id="promoAmount" type="number" inputmode="numeric" readonly>
-  </label><br><br>
+    <input id="promoAmount" type="number" inputmode="numeric" step="1" min="0">
+  </label>
+
   
   <label>Despacho (CLP)<br>
     <input name="despacho_clp" id="despachoField" type="number" min="0">
@@ -153,5 +154,6 @@
 </form>
 
 {% endblock %}
+
 
 
