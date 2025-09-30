@@ -72,3 +72,5 @@ input[type="radio"], input[type="checkbox"]{
 .strong { font-weight:600; }
 .wrap   { white-space: pre-wrap; word-break: break-word; }
 
+#promoAmount { pointer-events: auto; position: relative; z-index: 1; }
+label { display:block; } /* ya lo tienes, pero por si acaso */
